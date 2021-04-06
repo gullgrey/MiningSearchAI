@@ -177,7 +177,8 @@ class Mine(search.Problem):
         self.dig_tolerance = dig_tolerance
         assert underground.ndim in (2,3)
         
-        raise NotImplementedError
+        # this is dummy text
+        x = 3
 
 
     def surface_neigbhours(self, loc):
