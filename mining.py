@@ -231,8 +231,8 @@ class Mine(search.Problem):
 
         '''        
         state = np.array(state)
-
-        raise NotImplementedError
+        return 0
+        #raise NotImplementedError
                 
   
     def result(self, state, action):
