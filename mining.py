@@ -180,13 +180,14 @@ class Mine(search.Problem):
         self.len_x = None
         self.len_y = None
         self.len_z = None
-        self._set_lengths()
+
 
         self.cumsum_mine = None
         self.initial = None
-        self._set_cumsum_initial()
+        self._set_attributes()
+        # self._set_cumsum_initial()
 
-    def _set_lengths(self):
+    def _set_attributes(self):
         '''
         TODO add description
         Returns
@@ -196,17 +197,14 @@ class Mine(search.Problem):
         self.len_x = self.underground.shape[0]
         if self.underground.ndim == 2:
             self.len_z = self.underground.shape[1]
-        else:
-            self.len_y = self.underground.shape[1]
-            self.len_z = self.underground.shape[2]
 
-    def _set_cumsum_initial(self):
-
-        if self.underground.ndim == 2:
             self.cumsum_mine = self.underground.cumsum(axis = 1)
 
             initial_array = np.zeros(self.underground.shape[0])
         else:
+            self.len_y = self.underground.shape[1]
+            self.len_z = self.underground.shape[2]
+
             self.cumsum_mine = self.underground.cumsum(axis = 2)
 
             state_dimensions = (self.underground.shape[0], self.underground.shape[1])
