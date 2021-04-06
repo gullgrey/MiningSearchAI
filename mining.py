@@ -356,17 +356,35 @@ class Mine(search.Problem):
         # convert to np.array in order to use numpy operators
         state = np.array(state)
 
-        assert state.ndim in (1, 2)                             #check whether 2d or 3d array
+        assert state.ndim in (1, 2)                                                 #check whether 2d or 3d array
 
-        if state.ndim == 1:                                     #checks whether 2D Mine (x)
-            for i, j in enumerate(state[:-1]):                  #run through all values in list
-                if abs(j - state[i + 1]) > self.dig_tolerance:  #if absolute difference greater than dig tolerance
-                    return True
-            else:
-                return False
-        #else:                                                   #3D Mine
+        rows = np.size(state, 0)                                                    #length of rows
+        columns = np.size(state, 1)                                                 #length of columns
+        for i in rows:                                                              #get i & j index to do neighbour check on
+            for j in columns:
+                for r in range(i-1, i+2):                                           #cycle through range 1 above & below of row
+                    for c in range(j-1, j+2):                                       #cycle through range 1 above & below of column
+                        if 0 <= r < rows and 0 <= c < columns:                      #ensure not out of bounds
+                            if abs(state[i, j] - state[r, c]) > self.dig_tolerance: #get value of current postion (i,j) and minus it from current (r,c) neighbour
+                                return True
+        else:
+            return False
 
+#attempt 1 (works for 2D mine)
+        # if state.ndim == 1:                                     #checks whether 2D Mine (x)
+        #     for i, j in enumerate(state[:-1]):                  #run through all values in list
+        #         if abs(j - state[i + 1]) > self.dig_tolerance:  #if absolute difference greater than dig tolerance
+        #             return True
+        #     else:
+        #         return False
+        # else:                                                   #3D Mine
 
+#attempt 2
+        # if state.ndim == 1:                                      #checks whether 2D Mine (x)
+        #     for loc in enumerate(state[:-1]):
+        #         L = self.surface_neigbhours(self, loc)
+        #
+        # assert state.ndim in (1, 2)                             #check whether 2d or 3d array
 
 
 
