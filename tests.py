@@ -9,3 +9,11 @@ def test_1():
 
 
 test_1()
+
+def test_dig_tol():
+    mine = Mine(np.array([[1,2],[3,4]]))
+    state = [1, 1, 2, 2, 2, 3, 7]
+    Dig_check = mine.is_dangerous(state)
+    print(Dig_check)
+
+test_dig_tol()

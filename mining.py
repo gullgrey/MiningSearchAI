@@ -345,9 +345,23 @@ class Mine(search.Problem):
         No loops needed in the implementation!
         '''
         # convert to np.array in order to use numpy operators
-        state = np.array(state)         
+        state = np.array(state)
 
-        raise NotImplementedError
+        assert state.ndim in (1, 2)                             #check whether 2d or 3d array
+
+        if state.ndim == 1:                                     #checks whether 2D Mine (x)
+            for i, j in enumerate(state[:-1]):                  #run through all values in list
+                if abs(j - state[i + 1]) > self.dig_tolerance:  #if absolute difference greater than dig tolerance
+                    return True
+            else:
+                return False
+        #else:                                                   #3D Mine
+
+
+
+
+
+        #raise NotImplementedError
            
 
 
