@@ -56,7 +56,7 @@ def my_team():
 
     '''
     # TODO add everyone's name and student number
-    return [(10895159, 'Thomas', 'Cleal'), (), ()]
+    return [(10895159, 'Thomas', 'Cleal'), (10583084, 'Michael' 'Solomon'), ()]
     
 def convert_to_tuple(a):
     '''
