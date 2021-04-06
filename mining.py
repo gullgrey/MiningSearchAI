@@ -362,8 +362,8 @@ class Mine(search.Problem):
         columns = np.size(state, 1)                                                 #length of columns
         for i in rows:                                                              #get i & j index to do neighbour check on
             for j in columns:
-                for r in range(i-1, i+1):                                           #cycle through range 1 above & below of row
-                    for c in range(j-1, j+1):                                       #cycle through range 1 above & below of column
+                for r in range(i-1, i+2):                                           #cycle through range 1 above & below of row
+                    for c in range(j-1, j+2):                                       #cycle through range 1 above & below of column
                         if 0 <= r < rows and 0 <= c < columns:                      #ensure not out of bounds
                             if abs(state[i, j] - state[r, c]) > self.dig_tolerance: #get value of current postion (i,j) and minus it from current (r,c) neighbour
                                 return True
