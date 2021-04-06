@@ -27,4 +27,4 @@ def test_dig_tol():
     Dig_check = mine.is_dangerous(state)
     print(Dig_check)
 
-test_dig_tol()
+# test_dig_tol()

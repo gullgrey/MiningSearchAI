@@ -184,7 +184,7 @@ class Mine(search.Problem):
 
         self.cumsum_mine = None
         self.initial = None
-        self._set_cumsum()
+        self._set_cumsum_initial()
 
     def _set_lengths(self):
         '''
@@ -200,16 +200,19 @@ class Mine(search.Problem):
             self.len_y = self.underground.shape[1]
             self.len_z = self.underground.shape[2]
 
-    def _set_cumsum(self):
+    def _set_cumsum_initial(self):
+
         if self.underground.ndim == 2:
             self.cumsum_mine = self.underground.cumsum(axis = 1)
 
-            self.initial = np.zeros(self.underground.shape[0])
+            initial_array = np.zeros(self.underground.shape[0])
         else:
             self.cumsum_mine = self.underground.cumsum(axis = 2)
 
             state_dimensions = (self.underground.shape[0], self.underground.shape[1])
-            self.initial = np.zeros(state_dimensions)
+            initial_array = np.zeros(state_dimensions)
+
+        self.initial = convert_to_tuple(initial_array)
 
     def surface_neigbhours(self, loc):
         '''
