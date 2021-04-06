@@ -177,9 +177,25 @@ class Mine(search.Problem):
         self.dig_tolerance = dig_tolerance
         assert underground.ndim in (2,3)
         
-        # this is dummy text
-        x = 3
+        self.len_x = None
+        self.len_y = None
+        self.len_z = None
+        self._set_lengths()
 
+
+    def _set_lengths(self):
+        '''
+        TODO add description
+        Returns
+        -------
+        None.
+        '''
+        self.len_x = self.underground.shape[0]
+        if self.underground.ndim == 2:
+            self.len_z = self.underground.shape[1]
+        else:
+            self.len_y = self.underground.shape[1]
+            self.len_z = self.underground.shape[2]
 
     def surface_neigbhours(self, loc):
         '''
