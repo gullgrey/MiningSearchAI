@@ -182,6 +182,9 @@ class Mine(search.Problem):
         self.len_z = None
         self._set_lengths()
 
+        self.cumsum_mine = None
+        self.initial = None
+        self._set_cumsum()
 
     def _set_lengths(self):
         '''
@@ -196,6 +199,17 @@ class Mine(search.Problem):
         else:
             self.len_y = self.underground.shape[1]
             self.len_z = self.underground.shape[2]
+
+    def _set_cumsum(self):
+        if self.underground.ndim == 2:
+            self.cumsum_mine = self.underground.cumsum(axis = 1)
+
+            self.initial = np.zeros(self.underground.shape[0])
+        else:
+            self.cumsum_mine = self.underground.cumsum(axis = 2)
+
+            state_dimensions = (self.underground.shape[0], self.underground.shape[1])
+            self.initial = np.zeros(state_dimensions)
 
     def surface_neigbhours(self, loc):
         '''
@@ -290,12 +304,7 @@ class Mine(search.Problem):
             # level by level representation
             return '\n'.join('level {}\n'.format(z)
                    +str(self.underground[...,z]) for z in range(self.len_z))
-                    
-                        
-                
-            return self.underground[loc[0], loc[1],:]
-        
-    
+
     @staticmethod   
     def plot_state(state):
         if state.ndim==1:
