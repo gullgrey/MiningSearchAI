@@ -381,6 +381,8 @@ class Mine(search.Problem):
             for i, j in enumerate(state[:-1]):                                          #run through all values in list
                 if abs(j - state[i + 1]) > self.dig_tolerance:                          #if absolute difference greater than dig tolerance
                     return True
+            if (state[0] > self.dig_tolerance) or (state[-1] > self.dig_tolerance):     #if first or last number greater than dig tolerance
+                return True
 
         elif state.ndim == 2:                                                           #2D Array (x,y)
             rows = np.size(state, 0)                                                    #length of rows
@@ -393,6 +395,8 @@ class Mine(search.Problem):
                             if 0 <= r < rows and 0 <= c < columns:                      #ensure not out of bounds
                                 if abs(state[i, j] - state[r, c]) > self.dig_tolerance: #get value of current position (i,j) and minus it from current (r,c) neighbour
                                     return True
+                            elif state[i, j] > self.dig_tolerance:                      #if outside border positions greater than dig tolerance
+                                return True
         return False
 
            
