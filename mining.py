@@ -57,7 +57,8 @@ def my_team():
     '''
     # TODO add everyone's name and student number
     return [(10895159, 'Thomas', 'Cleal'), (10583084, 'Michael', 'Solomon'), ()]
-    
+
+
 def convert_to_tuple(a):
     '''
     Convert the parameter 'a' into a nested tuple of the same shape as 'a'.
@@ -181,15 +182,16 @@ class Mine(search.Problem):
         self.len_y = None
         self.len_z = None
 
-
         self.cumsum_mine = None
         self.initial = None
+
         self._set_attributes()
         # self._set_cumsum_initial()
 
     def _set_attributes(self):
         '''
         TODO add description
+
         Returns
         -------
         None.
@@ -263,9 +265,25 @@ class Mine(search.Problem):
 
         '''        
         state = np.array(state)
-        return 0
-        #raise NotImplementedError
-                
+        assert state.ndim in (1, 2)
+
+        valid_actions = []
+
+        if state.ndim == 1:
+            coordinates = ((x,) for x in range(self.len_x))
+        else:
+            coordinates = ((x, y) for x in range(self.len_x) for y in range(self.len_y))
+
+        for coordinate in coordinates:
+            neighbours = self.surface_neigbhours(coordinate)
+            within_tolerance = True
+            for neighbour in neighbours:
+                if (state[coordinate] - state[neighbour]) >= self.dig_tolerance:
+                    within_tolerance = False
+            if within_tolerance:
+                valid_actions.append(coordinate)
+
+        return (action for action in valid_actions)
   
     def result(self, state, action):
         """Return the state that results from executing the given
