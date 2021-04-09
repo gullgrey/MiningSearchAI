@@ -365,7 +365,21 @@ class Mine(search.Problem):
         '''
         # convert to np.array in order to use tuple addressing
         # state[loc]   where loc is a tuple
-        raise NotImplementedError
+
+        state = np.array(state)
+
+        total_payoff = 0
+
+        rows = np.size(state, 0)                                    # length of rows
+        columns = np.size(state, 1)                                 # length of columns
+        for i in range(0, rows):                                    # get i & j index to do neighbour check on
+            for j in range(0, columns):
+                depth = 0
+                while depth != state[i, j]:
+                    total_payoff += self.underground[i, j, depth]
+                    depth += 1
+
+        return total_payoff
 
 
     def is_dangerous(self, state): #Michael
