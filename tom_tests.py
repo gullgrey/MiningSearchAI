@@ -21,6 +21,8 @@ state1 = (1, 1, 2, 2, 3, 4, 4)
 state2 = ((1, 1, 2, 2, 3, 4, 4),
           (1, 1, 2, 3, 4, 5, 6))
 
+state3 = (0, 0, 2, 1, 2, 2, 2)
+
 def test_1():
 
     mine = Mine(np.array(x))
@@ -47,6 +49,9 @@ def test_actions():
         print(value)
     # print(next(a), next(a))
 
+def test_find_action_sequence():
+
+    find_action_sequence(state3, state1)
 
 if __name__ == '__main__':
     separator_string = '\n------------------------------------------------------------\n '
@@ -56,4 +61,6 @@ if __name__ == '__main__':
     test_dig_tol()
     print(separator_string)
     test_actions()
+    print(separator_string)
+    test_find_action_sequence()
 
