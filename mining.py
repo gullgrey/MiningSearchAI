@@ -368,31 +368,29 @@ class Mine(search.Problem):
 
         state = np.array(state)
 
-        total_payoff = 0                                                                        # initialise total payoff as 0
+        total_payoff = 0                                               # initialise total payoff as 0
 
 
         #2D Mine
-        if state.ndim == 1:                                                                     # 1D Array (x)
-            rows = np.size(state, 0)                                                            # length of rows
-            for i in range(0, rows):                                                            # get i & j index to do neighbour check on
-                depth = 0                                                                       # starting z co-ordinate
-                while depth != state[i] + 1:                                                    # mine in single column until reaching "state depth"
-                    #print("depth = " + str(depth) + " i = " + str(i))
-                    total_payoff += self.underground[i, depth]                                  # add each z value into total
-                    depth += 1                                                                  # mine down the column
+        if state.ndim == 1:                                            # 1D Array (x)
+            rows = np.size(state, 0)                                   # length of rows
+            for i in range(0, rows):                                   # get i & j index to do neighbour check on
+                depth = 0                                              # starting z co-ordinate
+                while depth != state[i] + 1:                           # mine in single column until reaching "state depth"
+                    total_payoff += self.underground[i, depth]         # add each z value into total
+                    depth += 1                                         # mine down the column
             return total_payoff
 
         #3D Mine
-        elif state.ndim == 2:                                                                   # 2D Array (x,y)
-            columns = np.size(state, 1)                                                         # length of columns
-            rows = np.size(state, 0)                                                            # length of rows
-            for i in range(0, rows):                                                            # get i & j index to do neighbour check on
+        elif state.ndim == 2:                                          # 2D Array (x,y)
+            columns = np.size(state, 1)                                # length of columns
+            rows = np.size(state, 0)                                   # length of rows
+            for i in range(0, rows):                                   # get i & j index to do neighbour check on
                 for j in range(0, columns):
-                    depth = 0                                                                   # starting z co-ordinate
-                    while depth != state[i, j] + 1:                                             # mine in single column until reaching "state depth"
-                        #print("depth = " + str(depth) + " i = " + str(i) + " j = " + str(j))
-                        total_payoff += self.underground[i, j, depth]                           # add each z value into total
-                        depth += 1                                                              # mine down the column
+                    depth = 0                                          # starting z co-ordinate
+                    while depth != state[i, j] + 1:                    # mine in single column until reaching "state depth"
+                        total_payoff += self.underground[i, j, depth]  # add each z value into total
+                        depth += 1                                     # mine down the column
             return total_payoff
 
 
