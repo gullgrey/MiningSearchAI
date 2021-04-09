@@ -55,8 +55,7 @@ def my_team():
     of the form (student_number, first_name, last_name)
 
     '''
-    # TODO add everyone's name and student number
-    return [(10895159, 'Thomas', 'Cleal'), (10583084, 'Michael', 'Solomon'), (10154337, Clancy, Haupt)]
+    return [(10895159, 'Thomas', 'Cleal'), (10583084, 'Michael', 'Solomon'), (10154337, 'Clancy', 'Haupt')]
 
 
 def convert_to_tuple(a):
@@ -491,16 +490,24 @@ def find_action_sequence(s0, s1):
 
     assert s0.ndim == s1.ndim and s0.ndim in (1, 2)
 
-    state_difference = s1 - s0
+    action_sequence = []
+    while np.any(s1 - s0):
 
-    if not np.any(state_difference):
-        return s0
-    else:
-        pass
-        
-        
-        
-        
-    
-    
-    
+        flat_s0 = s0.flatten()
+        flat_s0 = list(dict.fromkeys(flat_s0))
+        flat_s0.sort()
+        for depth_value in flat_s0:
+            coordinate_list = np.where(s0 == depth_value)
+            if s0.ndim == 2:
+                min_coordinates = list(zip(coordinate_list[0], coordinate_list[1]))
+            else:
+                min_coordinates = coordinate_list[0]
+                min_coordinates = ((coordinate,) for coordinate in min_coordinates)
+            for coordinate in min_coordinates:
+                if s1[coordinate] != s0[coordinate]:
+                    action_sequence.append(coordinate)
+                    s0[coordinate] += 1
+
+    return action_sequence
+
+
