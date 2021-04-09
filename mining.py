@@ -270,8 +270,10 @@ class Mine(search.Problem):
         valid_actions = []
 
         if state.ndim == 1:
+            # generates every loc for a 1 dimensional state
             coordinates = ((x,) for x in range(self.len_x))
         else:
+            # generates every loc for a 2 dimensional state
             coordinates = ((x, y) for x in range(self.len_x) for y in range(self.len_y))
 
         for coordinate in coordinates:
@@ -466,9 +468,17 @@ def find_action_sequence(s0, s1):
     '''    
     # approach: among all columns for which s0 < s1, pick the column loc
     # with the smallest s0[loc]
-    raise NotImplementedError
-        
-        
+    s0 = np.array(s0)
+    s1 = np.array(s1)
+
+    assert s0.ndim == s1.ndim and s0.ndim in (1, 2)
+
+    state_difference = s1 - s0
+
+    if not np.any(state_difference):
+        return s0
+    else:
+        pass
         
         
         
