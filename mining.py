@@ -368,17 +368,16 @@ class Mine(search.Problem):
 
         state = np.array(state)
 
-        total_payoff = 0
-
-        rows = np.size(state, 0)                                    # length of rows
-        columns = np.size(state, 1)                                 # length of columns
-        for i in range(0, rows):                                    # get i & j index to do neighbour check on
+        total_payoff = 0                                                                    # initialise total payoff as 0
+        rows = np.size(state, 0)                                                            # length of rows
+        columns = np.size(state, 1)                                                         # length of columns
+        for i in range(0, rows):                                                            # get i & j index to do neighbour check on
             for j in range(0, columns):
-                depth = 0
-                while depth != state[i, j]:
-                    total_payoff += self.underground[i, j, depth]
-                    depth += 1
-
+                depth = 0                                                                   # starting z co-ordinate
+                while depth != state[i, j] + 1:                                             # mine in single column until reaching "state depth"
+                    #print("depth = " + str(depth) + " i = " + str(i) + " j = " + str(j))
+                    total_payoff += self.underground[i, j, depth]                           # add each z value into total
+                    depth += 1                                                              # mine down column
         return total_payoff
 
 
