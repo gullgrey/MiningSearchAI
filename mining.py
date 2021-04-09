@@ -55,8 +55,7 @@ def my_team():
     of the form (student_number, first_name, last_name)
 
     '''
-    # TODO add everyone's name and student number
-    return [(10895159, 'Thomas', 'Cleal'), (10583084, 'Michael', 'Solomon'), (10154337, Clancy, Haupt)]
+    return [(10895159, 'Thomas', 'Cleal'), (10583084, 'Michael', 'Solomon'), (10154337, 'Clancy', 'Haupt')]
 
 
 def convert_to_tuple(a):
@@ -369,17 +368,32 @@ class Mine(search.Problem):
 
         state = np.array(state)
 
-        total_payoff = 0                                                                    # initialise total payoff as 0
-        rows = np.size(state, 0)                                                            # length of rows
-        columns = np.size(state, 1)                                                         # length of columns
-        for i in range(0, rows):                                                            # get i & j index to do neighbour check on
-            for j in range(0, columns):
-                depth = 0                                                                   # starting z co-ordinate
-                while depth != state[i, j] + 1:                                             # mine in single column until reaching "state depth"
-                    #print("depth = " + str(depth) + " i = " + str(i) + " j = " + str(j))
-                    total_payoff += self.underground[i, j, depth]                           # add each z value into total
-                    depth += 1                                                              # mine down column
-        return total_payoff
+        total_payoff = 0                                                                        # initialise total payoff as 0
+
+
+        #2D Mine
+        if state.ndim == 1:                                                                     # 1D Array (x)
+            rows = np.size(state, 0)                                                            # length of rows
+            for i in range(0, rows):                                                            # get i & j index to do neighbour check on
+                depth = 0                                                                       # starting z co-ordinate
+                while depth != state[i] + 1:                                                    # mine in single column until reaching "state depth"
+                    #print("depth = " + str(depth) + " i = " + str(i))
+                    total_payoff += self.underground[i, depth]                                  # add each z value into total
+                    depth += 1                                                                  # mine down the column
+            return total_payoff
+
+        #3D Mine
+        elif state.ndim == 2:                                                                   # 2D Array (x,y)
+            columns = np.size(state, 1)                                                         # length of columns
+            rows = np.size(state, 0)                                                            # length of rows
+            for i in range(0, rows):                                                            # get i & j index to do neighbour check on
+                for j in range(0, columns):
+                    depth = 0                                                                   # starting z co-ordinate
+                    while depth != state[i, j] + 1:                                             # mine in single column until reaching "state depth"
+                        #print("depth = " + str(depth) + " i = " + str(i) + " j = " + str(j))
+                        total_payoff += self.underground[i, j, depth]                           # add each z value into total
+                        depth += 1                                                              # mine down the column
+            return total_payoff
 
 
     def is_dangerous(self, state): #Michael
@@ -491,16 +505,24 @@ def find_action_sequence(s0, s1):
 
     assert s0.ndim == s1.ndim and s0.ndim in (1, 2)
 
-    state_difference = s1 - s0
+    action_sequence = []
+    while np.any(s1 - s0):
 
-    if not np.any(state_difference):
-        return s0
-    else:
-        pass
-        
-        
-        
-        
-    
-    
-    
+        flat_s0 = s0.flatten()
+        flat_s0 = list(dict.fromkeys(flat_s0))
+        flat_s0.sort()
+        for depth_value in flat_s0:
+            coordinate_list = np.where(s0 == depth_value)
+            if s0.ndim == 2:
+                min_coordinates = list(zip(coordinate_list[0], coordinate_list[1]))
+            else:
+                min_coordinates = coordinate_list[0]
+                min_coordinates = ((coordinate,) for coordinate in min_coordinates)
+            for coordinate in min_coordinates:
+                if s1[coordinate] != s0[coordinate]:
+                    action_sequence.append(coordinate)
+                    s0[coordinate] += 1
+
+    return action_sequence
+
+
