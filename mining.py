@@ -185,7 +185,6 @@ class Mine(search.Problem):
         self.initial = None
 
         self._set_attributes()
-        # self._set_cumsum_initial()
 
     def _set_attributes(self):
         '''
