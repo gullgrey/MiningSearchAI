@@ -177,8 +177,6 @@ class Mine(search.Problem):
         self.dig_tolerance = dig_tolerance
         assert underground.ndim in (2,3)
 
-        self.counter = 0
-
         self.len_x = None
         self.len_y = None
         self.len_z = None
@@ -203,15 +201,15 @@ class Mine(search.Problem):
 
             self.cumsum_mine = self.underground.cumsum(axis = 1)
 
-            initial_array = np.zeros(self.underground.shape[0])
+            initial_array = np.zeros(self.underground.shape[0], dtype=int)
         else:
             self.len_y = self.underground.shape[1]
             self.len_z = self.underground.shape[2]
 
-            self.cumsum_mine = self.underground.cumsum(axis = 2)
+            self.cumsum_mine = self.underground.cumsum(axis=2)
 
             state_dimensions = (self.underground.shape[0], self.underground.shape[1])
-            initial_array = np.zeros(state_dimensions)
+            initial_array = np.zeros(state_dimensions, dtype=int)
 
         self.initial = convert_to_tuple(initial_array)
 
@@ -373,6 +371,7 @@ class Mine(search.Problem):
         # 	np.any
         # 	np.sum
         # 	np.arange
+        #   cum_sum?
 
         state = np.array(state)
 
@@ -438,41 +437,55 @@ class Mine(search.Problem):
     # ========================  Class Mine  ==================================
 
 
-def dp_recursive(best_payoff, best_action_list, best_final_state, mine):
+class DpAuxiliary:
     """
-    TODO add description
-    Parameters
-    ----------
-    best_payoff
-    best_action_list
-    best_final_state
-    mine
-
-    Returns
-    -------
-    TODO add returns
+    TODO add class description
     """
-    mine.counter+=1
-    print(mine.counter)
 
-    best_dig = (best_payoff, best_action_list, best_final_state)
+    def __init__(self, mine):
+        self.mine = mine
 
-    actions = mine.actions(best_final_state)
+        # nodes in the search tree that have already been computed
+        self.memoized_nodes = {}
 
-    for action in actions:
-        next_state = mine.result(best_final_state, action)
-        # print(action)
-        # print(best_final_state)
-        # print('\n\n')
-        next_dig = dp_recursive(mine.payoff(next_state),
-                                tuple(list(best_action_list) + [action]),
-                                next_state,
-                                mine)
-        if next_dig[0] > best_dig[0]:
-            best_dig = next_dig
-    return best_dig
+    def dp_recursive(self, best_payoff, best_action_list, best_final_state):
+        """
+        TODO add description
+        Parameters
+        ----------
+        best_payoff
+        best_action_list
+        best_final_state
 
-    
+        Returns
+        -------
+        TODO add returns
+        """
+
+        best_dig = (best_payoff, best_action_list, best_final_state)
+
+        actions = self.mine.actions(best_final_state)
+
+        for action in actions:
+            next_state = self.mine.result(best_final_state, action)
+
+            # Checks to see if node has already been computed
+            if next_state in self.memoized_nodes:
+                next_dig = self.memoized_nodes[next_state]
+            else:
+                next_dig = self.dp_recursive(self.mine.payoff(next_state),
+                                             best_action_list + [action],
+                                             next_state)
+
+                # adds computed node to a dictionary
+                self.memoized_nodes[next_state] = next_dig
+
+            # compares the next dig on the frontier and updates if payoff is greater
+            if next_dig[0] > best_dig[0]:
+                best_dig = next_dig
+        return best_dig
+
+
 def search_dp_dig_plan(mine):
     '''
     Search using Dynamic Programming the most profitable sequence of 
@@ -490,15 +503,12 @@ def search_dp_dig_plan(mine):
     best_payoff, best_action_list, best_final_state
 
     '''
-    best_final_state = mine.initial
-    best_payoff = 0
-    best_action_list = tuple([])
-    dp_recursive_memoized = functools.lru_cache(maxsize=1024)(dp_recursive)
-    return dp_recursive_memoized(best_payoff, best_action_list, best_final_state, mine)
+    initial_state = mine.initial
+    initial_payoff = 0
+    initial_action_list = []
+    dp_auxiliary = DpAuxiliary(mine)
+    return dp_auxiliary.dp_recursive(initial_payoff, initial_action_list, initial_state)
 
-
-
-    
     
 def search_bb_dig_plan(mine):
     '''

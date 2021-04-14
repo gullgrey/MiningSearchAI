@@ -74,7 +74,7 @@ def test_find_action_sequence():
     print(state)
 
 def test_dp_dig_plan():
-    mine = Mine(np.array(z))
+    mine = Mine(np.array(x))
     result = search_dp_dig_plan(mine)
     print(result)
 
