@@ -14,6 +14,10 @@ y = np.array([[1, 2],
               [3, 4],
               [5, 6]])
 
+z = np.array([[[-2, 2], [3, -4]],
+            [[1, 2], [3, 4]],
+              [[-2, 2], [3, -4]]])
+
 x_state = ((1,0,0),
            (0,2,0),
            (0,0,0),
@@ -52,9 +56,9 @@ def test_dig_tol(): #Michael
 
 def test_actions():
     mine = Mine(np.array(x), 2)
-    mine.len_x = 2
-    mine.len_y = 7
-    a = mine.actions(state2)
+    # mine.len_x = 2
+    # mine.len_y = 7
+    a = mine.actions(((1.0, 1.0, 1.0), (1.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)))
     for value in a:
         print(value)
     # print(next(a), next(a))
@@ -69,14 +73,21 @@ def test_find_action_sequence():
         state = mine.result(state, action)
     print(state)
 
+def test_dp_dig_plan():
+    mine = Mine(np.array(z))
+    result = search_dp_dig_plan(mine)
+    print(result)
+
 if __name__ == '__main__':
     separator_string = '\n------------------------------------------------------------\n '
 
-    test_1()
-    print(separator_string)
-    test_dig_tol()
-    print(separator_string)
-    test_actions()
-    print(separator_string)
-    test_find_action_sequence()
+    # test_1()
+    # print(separator_string)
+    # test_dig_tol()
+    # print(separator_string)
+    # test_actions()
+    # print(separator_string)
+    # test_find_action_sequence()
+    # print(separator_string)
+    test_dp_dig_plan()
 

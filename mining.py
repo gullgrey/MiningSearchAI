@@ -176,7 +176,9 @@ class Mine(search.Problem):
         # self.underground  should be considered as a 'read-only' variable!
         self.dig_tolerance = dig_tolerance
         assert underground.ndim in (2,3)
-        
+
+        self.counter = 0
+
         self.len_x = None
         self.len_y = None
         self.len_z = None
@@ -281,7 +283,7 @@ class Mine(search.Problem):
             for neighbour in neighbours:
                 if (state[coordinate] - state[neighbour]) >= self.dig_tolerance:
                     within_tolerance = False
-            if within_tolerance:
+            if within_tolerance and (state[coordinate] < self.len_z):
                 valid_actions.append(coordinate)
 
         return (action for action in valid_actions)
@@ -366,6 +368,12 @@ class Mine(search.Problem):
         # convert to np.array in order to use tuple addressing
         # state[loc]   where loc is a tuple
 
+        # TODO functions frederic used are:
+        #   np.array
+        # 	np.any
+        # 	np.sum
+        # 	np.arange
+
         state = np.array(state)
 
         total_payoff = 0                                               # initialise total payoff as 0
@@ -376,7 +384,7 @@ class Mine(search.Problem):
             rows = np.size(state, 0)                                   # length of rows
             for i in range(0, rows):                                   # get i & j index to do neighbour check on
                 depth = 0                                              # starting z co-ordinate
-                while depth != state[i] + 1:                           # mine in single column until reaching "state depth"
+                while depth != state[i]:                           # mine in single column until reaching "state depth"
                     total_payoff += self.underground[i, depth]         # add each z value into total
                     depth += 1                                         # mine down the column
             return total_payoff
@@ -388,7 +396,7 @@ class Mine(search.Problem):
             for i in range(0, rows):                                   # get i & j index to do neighbour check on
                 for j in range(0, columns):
                     depth = 0                                          # starting z co-ordinate
-                    while depth != state[i, j] + 1:                    # mine in single column until reaching "state depth"
+                    while depth != state[i, j]:                        # mine in single column until reaching "state depth"
                         total_payoff += self.underground[i, j, depth]  # add each z value into total
                         depth += 1                                     # mine down the column
             return total_payoff
@@ -428,8 +436,42 @@ class Mine(search.Problem):
 
     
     # ========================  Class Mine  ==================================
-    
-    
+
+
+def dp_recursive(best_payoff, best_action_list, best_final_state, mine):
+    """
+    TODO add description
+    Parameters
+    ----------
+    best_payoff
+    best_action_list
+    best_final_state
+    mine
+
+    Returns
+    -------
+    TODO add returns
+    """
+    mine.counter+=1
+    print(mine.counter)
+
+    best_dig = (best_payoff, best_action_list, best_final_state)
+
+    actions = mine.actions(best_final_state)
+
+    for action in actions:
+        next_state = mine.result(best_final_state, action)
+        # print(action)
+        # print(best_final_state)
+        # print('\n\n')
+        next_dig = dp_recursive(mine.payoff(next_state),
+                                tuple(list(best_action_list) + [action]),
+                                next_state,
+                                mine)
+        if next_dig[0] > best_dig[0]:
+            best_dig = next_dig
+    return best_dig
+
     
 def search_dp_dig_plan(mine):
     '''
@@ -448,7 +490,12 @@ def search_dp_dig_plan(mine):
     best_payoff, best_action_list, best_final_state
 
     '''
-    raise NotImplementedError
+    best_final_state = mine.initial
+    best_payoff = 0
+    best_action_list = tuple([])
+    dp_recursive_memoized = functools.lru_cache(maxsize=1024)(dp_recursive)
+    return dp_recursive_memoized(best_payoff, best_action_list, best_final_state, mine)
+
 
 
     
