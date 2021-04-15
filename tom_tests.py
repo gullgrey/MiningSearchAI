@@ -21,7 +21,7 @@ z = np.array([[[-2, 2], [3, -4]],
 x_state = ((1,0,0),
            (0,2,0),
            (0,0,0),
-           (0,0,0),)
+           (0,0,0))
 
 y_state = ((0,0,0))
 
@@ -40,7 +40,7 @@ state4 = ((0, 0, 2, 1, 2, 2, 2),
 def test_1():
 
     mine = Mine(np.array(x))
-    print(mine)
+    # print(mine)
     print(mine.cumsum_mine)
     print(mine.initial)
 

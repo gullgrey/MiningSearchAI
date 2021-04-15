@@ -196,19 +196,21 @@ class Mine(search.Problem):
         if self.underground.ndim == 2:
             self.len_z = self.underground.shape[1]
 
-            self.cumsum_mine = self.underground.cumsum(axis = 1)
-
             initial_array = np.zeros(self.underground.shape[0], dtype=int)
         else:
             self.len_y = self.underground.shape[1]
             self.len_z = self.underground.shape[2]
 
-            self.cumsum_mine = self.underground.cumsum(axis=2)
-
             state_dimensions = (self.underground.shape[0], self.underground.shape[1])
             initial_array = np.zeros(state_dimensions, dtype=int)
 
         self.initial = convert_to_tuple(initial_array)
+
+        cumsum = self.underground.cumsum(axis=self.underground.ndim - 1)
+
+        # This inserts a zero at the first column of every row of the cumulative sum,
+        # to represent a block before it has been mined.
+        self.cumsum_mine = np.insert(cumsum, 0, 0, axis=self.underground.ndim - 1)
 
     def surface_neighbours(self, loc):
         '''
@@ -363,47 +365,60 @@ class Mine(search.Problem):
         # convert to np.array in order to use tuple addressing
         # state[loc]   where loc is a tuple
 
-        # TODO functions frederic used are:
-        #   np.array
-        # 	np.any
-        # 	np.sum
-        # 	np.arange
-        #   cum_sum?
-
         state = np.array(state)
+        if state.ndim == 1:
+            x_coordinates = np.arange(0, self.len_x)
 
-        total_payoff = 0                                               # initialise total payoff as 0
+            return np.sum(self.cumsum_mine[x_coordinates, state])
 
+        else:
+            x_coordinates, y_coordinates = np.indices((self.len_x, self.len_y))
+            x_coordinates = x_coordinates.flatten()
+            y_coordinates = y_coordinates.flatten()
 
-        #2D Mine
-        if state.ndim == 1:                                            # 1D Array (x)
-            rows = np.size(state, 0)                                   # length of rows
-            for i in range(0, rows):                                   # get i & j index to do neighbour check on
-                depth = 0                                              # starting z co-ordinate
-                while depth != state[i]:                           # mine in single column until reaching "state depth"
-                    total_payoff += self.underground[i, depth]         # add each z value into total
-                    depth += 1                                         # mine down the column
-            return total_payoff
-
-        #3D Mine
-        elif state.ndim == 2:                                          # 2D Array (x,y)
-            columns = np.size(state, 1)                                # length of columns
-            rows = np.size(state, 0)                                   # length of rows
-            for i in range(0, rows):                                   # get i & j index to do neighbour check on
-                for j in range(0, columns):
-                    depth = 0                                          # starting z co-ordinate
-                    while depth != state[i, j]:                        # mine in single column until reaching "state depth"
-                        total_payoff += self.underground[i, j, depth]  # add each z value into total
-                        depth += 1                                     # mine down the column
-            return total_payoff
+            return np.sum(self.cumsum_mine[x_coordinates, y_coordinates, state.flatten()])
 
 
-    def is_dangerous(self, state): #Michael
+
+        # state = np.array(state)
+        #
+        # total_payoff = 0                                               # initialise total payoff as 0
+        #
+        #
+        # #2D Mine
+        # if state.ndim == 1:                                            # 1D Array (x)
+        #     rows = np.size(state, 0)                                   # length of rows
+        #     for i in range(0, rows):                                   # get i & j index to do neighbour check on
+        #         depth = 0                                              # starting z co-ordinate
+        #         while depth != state[i]:                           # mine in single column until reaching "state depth"
+        #             total_payoff += self.underground[i, depth]         # add each z value into total
+        #             depth += 1                                         # mine down the column
+        #     return total_payoff
+        #
+        # #3D Mine
+        # elif state.ndim == 2:                                          # 2D Array (x,y)
+        #     columns = np.size(state, 1)                                # length of columns
+        #     rows = np.size(state, 0)                                   # length of rows
+        #     for i in range(0, rows):                                   # get i & j index to do neighbour check on
+        #         for j in range(0, columns):
+        #             depth = 0                                          # starting z co-ordinate
+        #             while depth != state[i, j]:                        # mine in single column until reaching "state depth"
+        #                 total_payoff += self.underground[i, j, depth]  # add each z value into total
+        #                 depth += 1                                     # mine down the column
+        #     return total_payoff
+
+
+    def is_dangerous(self, state):
         '''
         Return True if the given state breaches the dig_tolerance constraints.
         
         No loops needed in the implementation!
         '''
+        # TODO possible solution:
+        # np.roll 4 times eg. L UL U UR
+        # compare state with rolled state minus flipped rows/columns
+        # function within function?
+
         # convert to np.array in order to use numpy operators
         state = np.array(state)
 
