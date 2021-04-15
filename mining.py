@@ -40,8 +40,6 @@ import matplotlib.pyplot as plt
 
 import itertools
 
-import functools # @lru_cache(maxsize=32)
-
 from numbers import Number
 
 import search
@@ -445,7 +443,7 @@ class DpAuxiliary:
         self.mine = mine
 
         # nodes in the search tree that have already been computed
-        self.memoized_nodes = {}
+        self.cached_nodes = {}
 
     def dp_recursive(self, best_payoff, best_action_list, best_final_state):
         """
@@ -469,15 +467,15 @@ class DpAuxiliary:
             next_state = self.mine.result(best_final_state, action)
 
             # Checks to see if node has already been computed
-            if next_state in self.memoized_nodes:
-                next_dig = self.memoized_nodes[next_state]
+            if next_state in self.cached_nodes:
+                next_dig = self.cached_nodes[next_state]
             else:
                 next_dig = self.dp_recursive(self.mine.payoff(next_state),
                                              best_action_list + [action],
                                              next_state)
 
                 # adds computed node to a dictionary
-                self.memoized_nodes[next_state] = next_dig
+                self.cached_nodes[next_state] = next_dig
 
             # compares the next dig on the frontier and updates if payoff is greater
             if next_dig[0] > best_dig[0]:
