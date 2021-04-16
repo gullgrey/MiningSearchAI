@@ -414,33 +414,82 @@ class Mine(search.Problem):
         
         No loops needed in the implementation!
         '''
-        # TODO possible solution:
-        # np.roll 4 times eg. L UL U UR
-        # compare state with rolled state minus flipped rows/columns
-        # function within function?
 
         # convert to np.array in order to use numpy operators
         state = np.array(state)
 
-        assert state.ndim in (1, 2)                                                     #check whether 2d or 3d array
+        # check whether 2d or 3d array
+        assert state.ndim in (1, 2)
 
-        if state.ndim == 1:                                                             #1D Array (x)
-            for i, j in enumerate(state[:-1]):                                          #run through all values in list
-                if abs(j - state[i + 1]) > self.dig_tolerance:                          #if absolute difference greater than dig tolerance
-                    return True
+        def roll_compare(index, axis, diagonal):
+            '''
+            TODO add description
+            Parameters
+            ----------
+            index
+            axis
+            diagonal
 
-        elif state.ndim == 2:                                                           #2D Array (x,y)
-            rows = np.size(state, 0)                                                    #length of rows
-            columns = np.size(state, 1)                                                 #length of columns
-            for i in range(0, rows):                                                    #get i & j index to do neighbour check on
-                for j in range(0, columns):
-                    # print(str(i) + ", " + str(j) +  ": " + str(state[i,j]) +"\n")
-                    for r in range(i-1, i+2):                                           #cycle through range 1 above & below of row
-                        for c in range(j-1, j+2):                                       #cycle through range 1 above & below of column
-                            if 0 <= r < rows and 0 <= c < columns:                      #ensure not out of bounds
-                                if abs(state[i, j] - state[r, c]) > self.dig_tolerance: #get value of current position (i,j) and minus it from current (r,c) neighbour
-                                    return True
+            Returns
+            -------
+            TODO add returns
+            '''
+            if (index, axis) == (0, 1):
+                roll_direction, roll_axis = 1, 1
+            elif (index, axis) == (0, 0):
+                roll_direction, roll_axis = 1, 0
+            else:
+                roll_direction, roll_axis = -1, 1
+
+            if diagonal:
+                compare_state = np.roll(np.roll(state, 1, axis=0), roll_direction, axis=roll_axis)
+                trimmed_state = np.delete(np.delete(state, 0, 0), index, axis)
+                trimmed_compare = np.delete(np.delete(compare_state, 0, 0), index, axis)
+            else:
+                compare_state = np.roll(state, roll_direction, axis=roll_axis)
+                trimmed_state = np.delete(state, index, axis)
+                trimmed_compare = np.delete(compare_state, index, axis)
+
+            # compares values in shifted array to original state
+            # returns true if difference is greater then the dig tolerance.
+            if (abs(trimmed_state - trimmed_compare) > self.dig_tolerance).any():
+                return True
+            return False
+
+        if state.ndim == 1:
+            if roll_compare(0, 0, False):
+                return True
+
+        else:
+            # Shift state right and compare values
+            if (roll_compare(0, 1, False) or
+                    # Shift state down right and compare values
+                    roll_compare(0, 1, True) or
+                    # Shift state down and compare values
+                    roll_compare(0, 0, False) or
+                    # Shift state down left compare values
+                    roll_compare(-1, 1, True)):
+                return True
         return False
+
+
+        # if state.ndim == 1:                                                             #1D Array (x)
+        #     for i, j in enumerate(state[:-1]):                                          #run through all values in list
+        #         if abs(j - state[i + 1]) > self.dig_tolerance:                          #if absolute difference greater than dig tolerance
+        #             return True
+        #
+        # elif state.ndim == 2:                                                           #2D Array (x,y)
+        #     rows = np.size(state, 0)                                                    #length of rows
+        #     columns = np.size(state, 1)                                                 #length of columns
+        #     for i in range(0, rows):                                                    #get i & j index to do neighbour check on
+        #         for j in range(0, columns):
+        #             # print(str(i) + ", " + str(j) +  ": " + str(state[i,j]) +"\n")
+        #             for r in range(i-1, i+2):                                           #cycle through range 1 above & below of row
+        #                 for c in range(j-1, j+2):                                       #cycle through range 1 above & below of column
+        #                     if 0 <= r < rows and 0 <= c < columns:                      #ensure not out of bounds
+        #                         if abs(state[i, j] - state[r, c]) > self.dig_tolerance: #get value of current position (i,j) and minus it from current (r,c) neighbour
+        #                             return True
+        # return False
 
            
 
