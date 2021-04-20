@@ -26,7 +26,7 @@ def test_dig_tol(): #Michael
               (1, 2, 2, 2, 2, 2, 1),
               (1, 1, 1, 1, 1, 1, 1))
 
-    Dig_check = mine.is_dangerous(state1)
+    Dig_check = mine.is_dangerous(state2)
     print("Dig Tolerance exceeded?: " + str(Dig_check))
 
 def test_payoff():

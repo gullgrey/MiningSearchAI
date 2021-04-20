@@ -23,6 +23,16 @@ x_state = ((1,0,0),
            (0,0,0),
            (0,0,0))
 
+x_state2 = ((1,0,0),
+            (0,2,0),
+            (0,1,0),
+            (2,0,0))
+
+x_state3 = ((1,0,2),
+            (0,2,0),
+            (0,1,0),
+            (2,0,0))
+
 y_state = ((0,0,0))
 
 # 1D Tuple
@@ -37,6 +47,7 @@ state3 = (0, 0, 2, 1, 2, 2, 2)
 state4 = ((0, 0, 2, 1, 2, 2, 2),
           (0, 0, 2, 1, 2, 2, 2))
 
+
 def test_1():
 
     mine = Mine(np.array(x))
@@ -47,8 +58,6 @@ def test_1():
 
 def test_dig_tol(): #Michael
     mine = Mine(np.array([[1, 2], [3, 4]]))
-
-
 
     Dig_check = mine.is_dangerous(state1)
     print(Dig_check)
@@ -63,6 +72,7 @@ def test_actions():
         print(value)
     # print(next(a), next(a))
 
+
 def test_find_action_sequence():
 
     actions = find_action_sequence(state4, state2)
@@ -73,10 +83,25 @@ def test_find_action_sequence():
         state = mine.result(state, action)
     print(state)
 
+
 def test_dp_dig_plan():
     mine = Mine(np.array(x))
     result = search_dp_dig_plan(mine)
     print(result)
+
+
+def test_bb_priority_queue():
+    mine = Mine(np.array(x))
+    bb_aux = BbAuxiliary(mine)
+    bb_aux.priority_queue.append(np.array(x_state3))
+    bb_aux.priority_queue.append(x_state2)
+    bb_aux.priority_queue.append(x_state)
+    while bb_aux.priority_queue:
+        print(bb_aux.priority_queue.pop())
+
+def test_search_bb_dig_plan():
+    mine = Mine(np.array(x))
+    search_bb_dig_plan(mine)
 
 if __name__ == '__main__':
     separator_string = '\n------------------------------------------------------------\n '
@@ -89,5 +114,9 @@ if __name__ == '__main__':
     # print(separator_string)
     # test_find_action_sequence()
     # print(separator_string)
-    test_dp_dig_plan()
+    # test_dp_dig_plan()
+    # print(separator_string)
+    # test_bb_priority_queue()
+    print(separator_string)
+    test_search_bb_dig_plan()
 

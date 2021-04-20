@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 # This import registers the 3D projection, but is otherwise unused.
 # from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 
-import itertools
+from itertools import count
 
 from numbers import Number
 
@@ -176,7 +176,7 @@ class Mine(search.Problem):
         assert underground.ndim in (2,3)
 
         self.len_x = None
-        self.len_y = None
+        self.len_y = 1
         self.len_z = None
 
         self.cumsum_mine = None
@@ -408,6 +408,50 @@ class Mine(search.Problem):
         #     return total_payoff
 
 
+    def _roll_compare(self, index, axis, diagonal, state):
+        '''
+        TODO add description
+        Parameters
+        ----------
+        index
+        axis
+        diagonal
+        state
+
+        Returns
+        -------
+        TODO add returns
+        '''
+        if (index, axis) == (0, 1):
+            roll_direction, roll_axis = 1, 1
+        elif (index, axis) == (0, 0):
+            roll_direction, roll_axis = 1, 0
+        else:
+            roll_direction, roll_axis = -1, 1
+
+        if diagonal:
+            compare_state = np.roll(np.roll(state, 1, axis=0), roll_direction, axis=roll_axis)
+            trimmed_state = np.delete(np.delete(state, 0, 0), index, axis)
+            trimmed_compare = np.delete(np.delete(compare_state, 0, 0), index, axis)
+        else:
+            compare_state = np.roll(state, roll_direction, axis=roll_axis)
+            trimmed_state = np.delete(state, index, axis)
+            trimmed_compare = np.delete(compare_state, index, axis)
+
+        # These lines change the elements of the compared array to be the same as
+        # the elements of the original array if they equal -1.
+        # -1 represents an unassigned block of a state in the BB algorithm.
+        unassigned_compare = (trimmed_compare < 0)
+        trimmed_compare[unassigned_compare] = trimmed_state[unassigned_compare]
+        unassigned_state = (trimmed_state < 0)
+        trimmed_state[unassigned_state] = trimmed_compare[unassigned_state]
+
+        # compares values in shifted array to original state
+        # returns true if difference is greater then the dig tolerance.
+        if (abs(trimmed_state - trimmed_compare) > self.dig_tolerance).any():
+            return True
+        return False
+
     def is_dangerous(self, state):
         '''
         Return True if the given state breaches the dig_tolerance constraints.
@@ -421,54 +465,19 @@ class Mine(search.Problem):
         # check whether 2d or 3d array
         assert state.ndim in (1, 2)
 
-        def roll_compare(index, axis, diagonal):
-            '''
-            TODO add description
-            Parameters
-            ----------
-            index
-            axis
-            diagonal
-
-            Returns
-            -------
-            TODO add returns
-            '''
-            if (index, axis) == (0, 1):
-                roll_direction, roll_axis = 1, 1
-            elif (index, axis) == (0, 0):
-                roll_direction, roll_axis = 1, 0
-            else:
-                roll_direction, roll_axis = -1, 1
-
-            if diagonal:
-                compare_state = np.roll(np.roll(state, 1, axis=0), roll_direction, axis=roll_axis)
-                trimmed_state = np.delete(np.delete(state, 0, 0), index, axis)
-                trimmed_compare = np.delete(np.delete(compare_state, 0, 0), index, axis)
-            else:
-                compare_state = np.roll(state, roll_direction, axis=roll_axis)
-                trimmed_state = np.delete(state, index, axis)
-                trimmed_compare = np.delete(compare_state, index, axis)
-
-            # compares values in shifted array to original state
-            # returns true if difference is greater then the dig tolerance.
-            if (abs(trimmed_state - trimmed_compare) > self.dig_tolerance).any():
-                return True
-            return False
-
         if state.ndim == 1:
-            if roll_compare(0, 0, False):
+            if self._roll_compare(0, 0, False, state):
                 return True
 
         else:
             # Shift state right and compare values
-            if (roll_compare(0, 1, False) or
+            if (self._roll_compare(0, 1, False, state) or
                     # Shift state down right and compare values
-                    roll_compare(0, 1, True) or
+                    self._roll_compare(0, 1, True, state) or
                     # Shift state down and compare values
-                    roll_compare(0, 0, False) or
+                    self._roll_compare(0, 0, False, state) or
                     # Shift state down left compare values
-                    roll_compare(-1, 1, True)):
+                    self._roll_compare(-1, 1, True, state)):
                 return True
         return False
 
@@ -504,6 +513,12 @@ class DpAuxiliary:
     """
 
     def __init__(self, mine):
+        """
+        TODO add constructor description
+        Parameters
+        ----------
+        mine
+        """
         self.mine = mine
 
         # nodes in the search tree that have already been computed
@@ -522,7 +537,6 @@ class DpAuxiliary:
         -------
         TODO add returns
         """
-
         best_dig = (best_payoff, best_action_list, best_final_state)
 
         actions = self.mine.actions(best_final_state)
@@ -570,6 +584,71 @@ def search_dp_dig_plan(mine):
     dp_auxiliary = DpAuxiliary(mine)
     return dp_auxiliary.dp_recursive(initial_payoff, initial_action_list, initial_state)
 
+
+class BbAuxiliary:
+    """
+    TODO add class description
+    """
+    def __init__(self, mine):
+        """
+        TODO add constructor description
+        Parameters
+        ----------
+        mine
+        """
+        self.mine = mine
+        self.best_so_far = mine.initial
+        self.priority_queue = search.PriorityQueue(order='max', f=lambda x: self.mine.payoff(x[1]))
+        self.operations_counter = count()
+        dimensions = self.mine.cumsum_mine.ndim - 1
+        self.upper_bound = self.mine.cumsum_mine.argmax(dimensions)
+        self.test_counter = count()
+
+    def bb_search_tree(self, state):
+
+        if np.all(state > 0):
+            return state
+
+        # coordinates of the next block that has not been assigned a dig.
+        (x, y) = np.unravel_index(np.argmax(state < 0), state.shape)
+        coordinates = (x, y)
+        for z in range(self.mine.len_z + 1):
+            frontier_state = np.copy(state)
+            frontier_state[coordinates] = z
+            if self.mine.is_dangerous(frontier_state):
+                continue
+
+            unassigned_dig = (frontier_state < 0)
+            compare_state = np.copy(frontier_state)
+            compare_state[unassigned_dig] = self.upper_bound[unassigned_dig]
+
+            if self.mine.payoff(compare_state) > self.mine.payoff(self.best_so_far):
+                self.priority_queue.append((next(self.operations_counter), compare_state, frontier_state))
+
+        if not self.priority_queue.heap:
+            return state
+
+        best_node = self.priority_queue.pop()[2]
+        return self.bb_search_tree(best_node)
+
+    def bb_solution_candidates(self, state):
+        solution_candidate = self.bb_search_tree(state)
+
+        new_queue = search.PriorityQueue(order='max', f=lambda x: self.mine.payoff(x[1]))
+        while self.priority_queue:
+            node = self.priority_queue.pop()
+            if self.mine.payoff(node[1]) <= self.mine.payoff(solution_candidate):
+                print()
+                print(self.mine.payoff(node[1]))
+                print(node[1])
+                new_queue.append(node)
+        if not new_queue.heap:
+            return solution_candidate
+        else:
+            self.best_so_far = solution_candidate
+            return self.bb_solution_candidates(solution_candidate)
+
+
     
 def search_bb_dig_plan(mine):
     '''
@@ -588,8 +667,15 @@ def search_bb_dig_plan(mine):
 
     '''
     
-    raise NotImplementedError
+    state = np.array(mine.initial) - 1
+    bb_auxiliary = BbAuxiliary(mine)
+    best_final_state = bb_auxiliary.bb_search_tree(state)
 
+    best_final_state = convert_to_tuple(best_final_state)
+    best_payoff = mine.payoff(best_final_state)
+    best_action_list = find_action_sequence(mine.initial, best_final_state)
+
+    return best_payoff, best_action_list, best_final_state
 
 
 def find_action_sequence(s0, s1):
