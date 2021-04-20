@@ -7,7 +7,7 @@ import numpy as np
 x = np.array(    [[[1, 2], [1, 2], [5, -205]],
                   [[1, 2], [1, 2], [1, 2]],
                   [[1, 2], [1, 2], [1, 2]],
-                  [[1, 2], [1, 2], [1, 2]]])
+                  [[1, 2], [1, 2], [1, 47]]])
 
 #2D mine
 y = np.array([[1, 2],
@@ -90,31 +90,31 @@ def test_dp_dig_plan():
     print(result)
 
 
-def test_bb_priority_queue():
-    mine = Mine(np.array(x))
-    bb_aux = BbAuxiliary(mine)
-    bb_aux.priority_queue.append(np.array(x_state3))
-    bb_aux.priority_queue.append(x_state2)
-    bb_aux.priority_queue.append(x_state)
-    while bb_aux.priority_queue:
-        print(bb_aux.priority_queue.pop())
+# def test_bb_priority_queue():
+#     mine = Mine(np.array(x))
+#     bb_aux = BbAuxiliary(mine)
+#     bb_aux.priority_queue.append(np.array(x_state3))
+#     bb_aux.priority_queue.append(x_state2)
+#     bb_aux.priority_queue.append(x_state)
+#     while bb_aux.priority_queue:
+#         print(bb_aux.priority_queue.pop())
 
 def test_search_bb_dig_plan():
-    mine = Mine(np.array(x))
-    search_bb_dig_plan(mine)
+    mine = Mine(np.array(y-3))
+    print(search_bb_dig_plan(mine))
 
 if __name__ == '__main__':
     separator_string = '\n------------------------------------------------------------\n '
 
-    # test_1()
-    # print(separator_string)
-    # test_dig_tol()
-    # print(separator_string)
-    # test_actions()
-    # print(separator_string)
-    # test_find_action_sequence()
-    # print(separator_string)
-    # test_dp_dig_plan()
+    test_1()
+    print(separator_string)
+    test_dig_tol()
+    print(separator_string)
+    test_actions()
+    print(separator_string)
+    test_find_action_sequence()
+    print(separator_string)
+    test_dp_dig_plan()
     # print(separator_string)
     # test_bb_priority_queue()
     print(separator_string)

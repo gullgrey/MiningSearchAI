@@ -182,6 +182,8 @@ class Mine(search.Problem):
         self.cumsum_mine = None
         self.initial = None
 
+        self.dimensions = None
+
         self._set_attributes()
 
     def _set_attributes(self):
@@ -606,30 +608,35 @@ class BbAuxiliary:
 
     def bb_search_tree(self, state):
 
-        if np.all(state > 0):
-            return state
+        while np.any(state < 0):
 
-        # coordinates of the next block that has not been assigned a dig.
-        (x, y) = np.unravel_index(np.argmax(state < 0), state.shape)
-        coordinates = (x, y)
-        for z in range(self.mine.len_z + 1):
-            frontier_state = np.copy(state)
-            frontier_state[coordinates] = z
-            if self.mine.is_dangerous(frontier_state):
-                continue
+            # coordinates of the next block that has not been assigned a dig.
+            if self.mine.underground.ndim == 2:
+                x = np.argmax(state < 0)
+                coordinates = (x,)
+            else:
+                (x, y) = np.unravel_index(np.argmax(state < 0), state.shape)
+                coordinates = (x, y)
 
-            unassigned_dig = (frontier_state < 0)
-            compare_state = np.copy(frontier_state)
-            compare_state[unassigned_dig] = self.upper_bound[unassigned_dig]
+            for z in range(self.mine.len_z + 1):
+                frontier_state = np.copy(state)
+                frontier_state[coordinates] = z
+                if self.mine.is_dangerous(frontier_state):
+                    continue
 
-            if self.mine.payoff(compare_state) > self.mine.payoff(self.best_so_far):
-                self.priority_queue.append((next(self.operations_counter), compare_state, frontier_state))
+                unassigned_dig = (frontier_state < 0)
+                compare_state = np.copy(frontier_state)
+                compare_state[unassigned_dig] = self.upper_bound[unassigned_dig]
 
-        if not self.priority_queue.heap:
-            return state
+                if self.mine.payoff(compare_state) > self.mine.payoff(self.best_so_far):
+                    self.priority_queue.append((next(self.operations_counter), compare_state, frontier_state))
 
-        best_node = self.priority_queue.pop()[2]
-        return self.bb_search_tree(best_node)
+            if not self.priority_queue.heap:
+                print(state)
+                return self.best_so_far
+
+            state = self.priority_queue.pop()[2]
+        return state
 
     def bb_solution_candidates(self, state):
         solution_candidate = self.bb_search_tree(state)
@@ -638,9 +645,6 @@ class BbAuxiliary:
         while self.priority_queue:
             node = self.priority_queue.pop()
             if self.mine.payoff(node[1]) <= self.mine.payoff(solution_candidate):
-                print()
-                print(self.mine.payoff(node[1]))
-                print(node[1])
                 new_queue.append(node)
         if not new_queue.heap:
             return solution_candidate
@@ -649,7 +653,6 @@ class BbAuxiliary:
             return self.bb_solution_candidates(solution_candidate)
 
 
-    
 def search_bb_dig_plan(mine):
     '''
     Compute, using Branch and Bound, the most profitable sequence of 
@@ -669,7 +672,7 @@ def search_bb_dig_plan(mine):
     
     state = np.array(mine.initial) - 1
     bb_auxiliary = BbAuxiliary(mine)
-    best_final_state = bb_auxiliary.bb_search_tree(state)
+    best_final_state = bb_auxiliary.bb_solution_candidates(state)
 
     best_final_state = convert_to_tuple(best_final_state)
     best_payoff = mine.payoff(best_final_state)
