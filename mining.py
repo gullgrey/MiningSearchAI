@@ -380,36 +380,6 @@ class Mine(search.Problem):
 
             return np.sum(self.cumsum_mine[x_coordinates, y_coordinates, state.flatten()])
 
-
-
-        # state = np.array(state)
-        #
-        # total_payoff = 0                                               # initialise total payoff as 0
-        #
-        #
-        # #2D Mine
-        # if state.ndim == 1:                                            # 1D Array (x)
-        #     rows = np.size(state, 0)                                   # length of rows
-        #     for i in range(0, rows):                                   # get i & j index to do neighbour check on
-        #         depth = 0                                              # starting z co-ordinate
-        #         while depth != state[i]:                           # mine in single column until reaching "state depth"
-        #             total_payoff += self.underground[i, depth]         # add each z value into total
-        #             depth += 1                                         # mine down the column
-        #     return total_payoff
-        #
-        # #3D Mine
-        # elif state.ndim == 2:                                          # 2D Array (x,y)
-        #     columns = np.size(state, 1)                                # length of columns
-        #     rows = np.size(state, 0)                                   # length of rows
-        #     for i in range(0, rows):                                   # get i & j index to do neighbour check on
-        #         for j in range(0, columns):
-        #             depth = 0                                          # starting z co-ordinate
-        #             while depth != state[i, j]:                        # mine in single column until reaching "state depth"
-        #                 total_payoff += self.underground[i, j, depth]  # add each z value into total
-        #                 depth += 1                                     # mine down the column
-        #     return total_payoff
-
-
     def _roll_compare(self, index, axis, diagonal, state):
         '''
         TODO add description
@@ -483,29 +453,6 @@ class Mine(search.Problem):
                 return True
         return False
 
-
-        # if state.ndim == 1:                                                             #1D Array (x)
-        #     for i, j in enumerate(state[:-1]):                                          #run through all values in list
-        #         if abs(j - state[i + 1]) > self.dig_tolerance:                          #if absolute difference greater than dig tolerance
-        #             return True
-        #
-        # elif state.ndim == 2:                                                           #2D Array (x,y)
-        #     rows = np.size(state, 0)                                                    #length of rows
-        #     columns = np.size(state, 1)                                                 #length of columns
-        #     for i in range(0, rows):                                                    #get i & j index to do neighbour check on
-        #         for j in range(0, columns):
-        #             # print(str(i) + ", " + str(j) +  ": " + str(state[i,j]) +"\n")
-        #             for r in range(i-1, i+2):                                           #cycle through range 1 above & below of row
-        #                 for c in range(j-1, j+2):                                       #cycle through range 1 above & below of column
-        #                     if 0 <= r < rows and 0 <= c < columns:                      #ensure not out of bounds
-        #                         if abs(state[i, j] - state[r, c]) > self.dig_tolerance: #get value of current position (i,j) and minus it from current (r,c) neighbour
-        #                             return True
-        # return False
-
-           
-
-
-    
     # ========================  Class Mine  ==================================
 
 
@@ -604,10 +551,18 @@ class BbAuxiliary:
         self.operations_counter = count()
         dimensions = self.mine.cumsum_mine.ndim - 1
         self.upper_bound = self.mine.cumsum_mine.argmax(dimensions)
-        self.test_counter = count()
 
     def bb_search_tree(self, state):
+        '''
+        TODO
+        Parameters
+        ----------
+        state
 
+        Returns
+        -------
+
+        '''
         while np.any(state < 0):
 
             # coordinates of the next block that has not been assigned a dig.
@@ -629,26 +584,44 @@ class BbAuxiliary:
                 compare_state[unassigned_dig] = self.upper_bound[unassigned_dig]
 
                 if self.mine.payoff(compare_state) > self.mine.payoff(self.best_so_far):
+                    # The compare_state is used to determine order in the priority queue.
+                    # The frontier_state is actual frontier state with unassigned values.
+                    # The operations_counter is used so that if compare_state arrays have the same payoff,
+                    # the heapq.heappush then compares a unique integer value instead.
                     self.priority_queue.append((next(self.operations_counter), compare_state, frontier_state))
 
             if not self.priority_queue.heap:
-                print(state)
                 return self.best_so_far
 
+            # pops the frontier state which has unassigned dig values.
             state = self.priority_queue.pop()[2]
         return state
 
     def bb_solution_candidates(self, state):
+        '''
+        TODO
+        Parameters
+        ----------
+        state
+
+        Returns
+        -------
+
+        '''
         solution_candidate = self.bb_search_tree(state)
 
         new_queue = search.PriorityQueue(order='max', f=lambda x: self.mine.payoff(x[1]))
+        # creates a new priority queue and adds states from the main priority queue only if they
+        # are greater then solution_candidate's payoff.
         while self.priority_queue:
             node = self.priority_queue.pop()
-            if self.mine.payoff(node[1]) <= self.mine.payoff(solution_candidate):
+            if self.mine.payoff(node[1]) > self.mine.payoff(solution_candidate):
                 new_queue.append(node)
+
         if not new_queue.heap:
             return solution_candidate
         else:
+            self.priority_queue = new_queue
             self.best_so_far = solution_candidate
             return self.bb_solution_candidates(solution_candidate)
 

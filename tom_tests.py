@@ -4,15 +4,15 @@ import numpy as np
 
 
 #3D mine
-x = np.array(    [[[1, 2], [1, 2], [5, -205]],
+x = np.array(    [[[1, 2], [1, 2], [1, 2]],
                   [[1, 2], [1, 2], [1, 2]],
                   [[1, 2], [1, 2], [1, 2]],
-                  [[1, 2], [1, 2], [1, 47]]])
+                  [[1, 2], [1, 2], [-7, 2]]])
 
 #2D mine
-y = np.array([[1, 2],
-              [3, 4],
-              [5, 6]])
+y = np.array([[1, 2, -5, -5, -5, -5],
+              [1, 2, -5, -5, -5, -5],
+              [1, 2, -5, -5, -5, 100]])
 
 z = np.array([[[-2, 2], [3, -4]],
             [[1, 2], [3, 4]],
@@ -88,6 +88,7 @@ def test_dp_dig_plan():
     mine = Mine(np.array(x))
     result = search_dp_dig_plan(mine)
     print(result)
+    print(mine)
 
 
 # def test_bb_priority_queue():
@@ -100,7 +101,7 @@ def test_dp_dig_plan():
 #         print(bb_aux.priority_queue.pop())
 
 def test_search_bb_dig_plan():
-    mine = Mine(np.array(y-3))
+    mine = Mine(np.array(y))
     print(search_bb_dig_plan(mine))
 
 if __name__ == '__main__':
