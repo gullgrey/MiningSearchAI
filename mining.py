@@ -580,15 +580,15 @@ class BbAuxiliary:
                     continue
 
                 unassigned_dig = (frontier_state < 0)
-                compare_state = np.copy(frontier_state)
-                compare_state[unassigned_dig] = self.upper_bound[unassigned_dig]
+                optimistic_state = np.copy(frontier_state)
+                optimistic_state[unassigned_dig] = self.upper_bound[unassigned_dig]
 
-                if self.mine.payoff(compare_state) > self.mine.payoff(self.best_so_far):
-                    # The compare_state is used to determine order in the priority queue.
+                if self.mine.payoff(optimistic_state) > self.mine.payoff(self.best_so_far):
+                    # The optimistic_state is used to determine order in the priority queue.
                     # The frontier_state is actual frontier state with unassigned values.
-                    # The operations_counter is used so that if compare_state arrays have the same payoff,
+                    # The operations_counter is used so that if optimistic_state arrays have the same payoff,
                     # the heapq.heappush then compares a unique integer value instead.
-                    self.priority_queue.append((next(self.operations_counter), compare_state, frontier_state))
+                    self.priority_queue.append((next(self.operations_counter), optimistic_state, frontier_state))
 
             if not self.priority_queue.heap:
                 return self.best_so_far
