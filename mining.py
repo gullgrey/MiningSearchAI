@@ -183,6 +183,8 @@ class Mine(search.Problem):
         self.initial = None
 
         self.dimensions = None
+        self.x_coordinates = None
+        self.y_coordinates = None
 
         self._set_attributes()
 
@@ -199,12 +201,16 @@ class Mine(search.Problem):
             self.len_z = self.underground.shape[1]
 
             initial_array = np.zeros(self.underground.shape[0], dtype=int)
+            self.x_coordinates = np.arange(0, self.len_x)
         else:
             self.len_y = self.underground.shape[1]
             self.len_z = self.underground.shape[2]
 
             state_dimensions = (self.underground.shape[0], self.underground.shape[1])
             initial_array = np.zeros(state_dimensions, dtype=int)
+            self.x_coordinates, self.y_coordinates = np.indices((self.len_x, self.len_y))
+            self.x_coordinates = self.x_coordinates.flatten()
+            self.y_coordinates = self.y_coordinates.flatten()
 
         self.initial = convert_to_tuple(initial_array)
 
@@ -280,17 +286,26 @@ class Mine(search.Problem):
                 # generates every loc for a 2 dimensional state
                 return ((x, y) for x in range(self.len_x) for y in range(self.len_y))
 
-        valid_actions = []
-        for coordinate in coordinates():
+        def valid_action(coordinate):
+            '''
+            TODO description
+            Parameters
+            ----------
+            coordinate
+
+            Returns
+            -------
+
+            '''
+            if state[coordinate] >= self.len_z:
+                return False
             neighbours = self.surface_neighbours(coordinate)
-            within_tolerance = True
             for neighbour in neighbours:
                 if (state[coordinate] - state[neighbour]) >= self.dig_tolerance:
-                    within_tolerance = False
-            if within_tolerance and (state[coordinate] < self.len_z):
-                valid_actions.append(coordinate)
+                    return False
+            return True
 
-        return (action for action in valid_actions)
+        return (coordinate for coordinate in coordinates() if valid_action(coordinate))
   
     def result(self, state, action):
         """Return the state that results from executing the given
@@ -374,16 +389,9 @@ class Mine(search.Problem):
 
         state = np.array(state)
         if state.ndim == 1:
-            x_coordinates = np.arange(0, self.len_x)
-
-            return np.sum(self.cumsum_mine[x_coordinates, state])
-
+            return np.sum(self.cumsum_mine[self.x_coordinates, state])
         else:
-            x_coordinates, y_coordinates = np.indices((self.len_x, self.len_y))
-            x_coordinates = x_coordinates.flatten()
-            y_coordinates = y_coordinates.flatten()
-
-            return np.sum(self.cumsum_mine[x_coordinates, y_coordinates, state.flatten()])
+            return np.sum(self.cumsum_mine[self.x_coordinates, self.y_coordinates, state.flatten()])
 
     def _roll_compare(self, index, axis, diagonal, state):
         '''

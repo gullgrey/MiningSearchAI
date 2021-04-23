@@ -101,7 +101,7 @@ def test_dp_dig_plan():
 #         print(bb_aux.priority_queue.pop())
 
 def test_search_bb_dig_plan():
-    mine = Mine(np.array(y))
+    mine = Mine(np.array([[[-1,0],[-1,0]],[[0,-1],[0,0]]]))
     print(search_bb_dig_plan(mine))
 
 if __name__ == '__main__':
