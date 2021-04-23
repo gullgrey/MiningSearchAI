@@ -546,7 +546,6 @@ def bb_search_tree(mine):
     -------
 
     '''
-    # self.mine = mine
     best_so_far = mine.initial
     state = np.array(best_so_far) - 1
     priority_queue = search.PriorityQueue(order='max', f=lambda var: mine.payoff(var[1]))
@@ -607,8 +606,6 @@ def search_bb_dig_plan(mine):
 
     '''
     
-    # state = np.array(mine.initial) - 1
-    # bb_auxiliary = BbAuxiliary(mine)
     best_final_state = bb_search_tree(mine)
 
     best_final_state = convert_to_tuple(best_final_state)
