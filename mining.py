@@ -266,16 +266,22 @@ class Mine(search.Problem):
         state = np.array(state)
         assert state.ndim in (1, 2)
 
+        def coordinates():
+            '''
+            TODO description
+            Returns
+            -------
+
+            '''
+            if state.ndim == 1:
+                # generates every loc for a 1 dimensional state
+                return ((x,) for x in range(self.len_x))
+            else:
+                # generates every loc for a 2 dimensional state
+                return ((x, y) for x in range(self.len_x) for y in range(self.len_y))
+
         valid_actions = []
-
-        if state.ndim == 1:
-            # generates every loc for a 1 dimensional state
-            coordinates = ((x,) for x in range(self.len_x))
-        else:
-            # generates every loc for a 2 dimensional state
-            coordinates = ((x, y) for x in range(self.len_x) for y in range(self.len_y))
-
-        for coordinate in coordinates:
+        for coordinate in coordinates():
             neighbours = self.surface_neighbours(coordinate)
             within_tolerance = True
             for neighbour in neighbours:
@@ -574,7 +580,8 @@ def bb_search_tree(mine):
 
             unassigned_dig = (frontier_state < 0)
             # The optimistic_state is used to determine order in the priority queue.
-            # It consists of
+            # It consists of every assigned value in the state with every unassigned value being set
+            # to its corresponding value in the upper bound.
             optimistic_state = np.copy(frontier_state)
             optimistic_state[unassigned_dig] = upper_bound[unassigned_dig]
 
@@ -640,25 +647,13 @@ def find_action_sequence(s0, s1):
     s1 = np.array(s1)
 
     assert s0.ndim == s1.ndim and s0.ndim in (1, 2)
+    state_difference = s1 - s0
+    assert np.all(state_difference >= 0)
 
     action_sequence = []
-    while np.any(s1 - s0):
-
-        flat_s0 = s0.flatten()
-        flat_s0 = list(dict.fromkeys(flat_s0))
-        flat_s0.sort()
-        for depth_value in flat_s0:
-            coordinate_list = np.where(s0 == depth_value)
-            if s0.ndim == 2:
-                min_coordinates = list(zip(coordinate_list[0], coordinate_list[1]))
-            else:
-                min_coordinates = coordinate_list[0]
-                min_coordinates = ((coordinate,) for coordinate in min_coordinates)
-            for coordinate in min_coordinates:
-                if s1[coordinate] != s0[coordinate]:
-                    action_sequence.append(coordinate)
-                    s0[coordinate] += 1
-
+    while np.any(state_difference > 0):
+        dig_layer = np.transpose((state_difference > 0).nonzero())
+        dig_layer = convert_to_tuple(dig_layer)
+        action_sequence.extend(dig_layer)
+        state_difference -= 1
     return action_sequence
-
-

@@ -7,7 +7,7 @@ import numpy as np
 x = np.array(    [[[1, 2], [1, 2], [1, 2]],
                   [[1, 2], [1, 2], [1, 2]],
                   [[1, 2], [1, 2], [1, 2]],
-                  [[1, 2], [1, 2], [-7, 2]]])
+                  [[1, 2], [1, 2], [-8, 2]]])
 
 #2D mine
 y = np.array([[1, 2, -5, -5, -5, -5],
@@ -75,7 +75,7 @@ def test_actions():
 
 def test_find_action_sequence():
 
-    actions = find_action_sequence(state4, state2)
+    actions = find_action_sequence(state2, state2)
     print(actions)
     mine = Mine(x)
     state = state4
