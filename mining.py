@@ -534,96 +534,60 @@ def search_dp_dig_plan(mine):
     return dp_auxiliary.dp_recursive(initial_payoff, initial_action_list, initial_state)
 
 
-class BbAuxiliary:
-    """
-    TODO add class description
-    """
-    def __init__(self, mine):
-        """
-        TODO add constructor description
-        Parameters
-        ----------
-        mine
-        """
-        self.mine = mine
-        self.best_so_far = mine.initial
-        self.priority_queue = search.PriorityQueue(order='max', f=lambda x: self.mine.payoff(x[1]))
-        self.operations_counter = count()
-        dimensions = self.mine.cumsum_mine.ndim - 1
-        self.upper_bound = self.mine.cumsum_mine.argmax(dimensions)
+def bb_search_tree(mine):
+    '''
+    TODO
+    Parameters
+    ----------
+    state
+    mine
 
-    def bb_search_tree(self, state):
-        '''
-        TODO
-        Parameters
-        ----------
-        state
+    Returns
+    -------
 
-        Returns
-        -------
+    '''
+    # self.mine = mine
+    best_so_far = mine.initial
+    state = np.array(best_so_far) - 1
+    priority_queue = search.PriorityQueue(order='max', f=lambda var: mine.payoff(var[1]))
+    operations_counter = count()
 
-        '''
-        while np.any(state < 0):
+    dimensions = mine.cumsum_mine.ndim - 1
+    upper_bound = mine.cumsum_mine.argmax(dimensions)
 
-            # coordinates of the next block that has not been assigned a dig.
-            if self.mine.underground.ndim == 2:
-                x = np.argmax(state < 0)
-                coordinates = (x,)
-            else:
-                (x, y) = np.unravel_index(np.argmax(state < 0), state.shape)
-                coordinates = (x, y)
+    while np.any(state < 0):
 
-            for z in range(self.mine.len_z + 1):
-                frontier_state = np.copy(state)
-                frontier_state[coordinates] = z
-                if self.mine.is_dangerous(frontier_state):
-                    continue
-
-                unassigned_dig = (frontier_state < 0)
-                optimistic_state = np.copy(frontier_state)
-                optimistic_state[unassigned_dig] = self.upper_bound[unassigned_dig]
-
-                if self.mine.payoff(optimistic_state) > self.mine.payoff(self.best_so_far):
-                    # The optimistic_state is used to determine order in the priority queue.
-                    # The frontier_state is actual frontier state with unassigned values.
-                    # The operations_counter is used so that if optimistic_state arrays have the same payoff,
-                    # the heapq.heappush then compares a unique integer value instead.
-                    self.priority_queue.append((next(self.operations_counter), optimistic_state, frontier_state))
-
-            if not self.priority_queue.heap:
-                return self.best_so_far
-
-            # pops the frontier state which has unassigned dig values.
-            state = self.priority_queue.pop()[2]
-        return state
-
-    def bb_solution_candidates(self, state):
-        '''
-        TODO
-        Parameters
-        ----------
-        state
-
-        Returns
-        -------
-
-        '''
-        solution_candidate = self.bb_search_tree(state)
-
-        new_queue = search.PriorityQueue(order='max', f=lambda x: self.mine.payoff(x[1]))
-        # creates a new priority queue and adds states from the main priority queue only if they
-        # are greater then solution_candidate's payoff.
-        while self.priority_queue:
-            node = self.priority_queue.pop()
-            if self.mine.payoff(node[1]) > self.mine.payoff(solution_candidate):
-                new_queue.append(node)
-
-        if not new_queue.heap:
-            return solution_candidate
+        # coordinates of the next block that has not been assigned a dig.
+        if mine.underground.ndim == 2:
+            x = np.argmax(state < 0)
+            coordinates = (x,)
         else:
-            self.priority_queue = new_queue
-            self.best_so_far = solution_candidate
-            return self.bb_solution_candidates(solution_candidate)
+            (x, y) = np.unravel_index(np.argmax(state < 0), state.shape)
+            coordinates = (x, y)
+
+        for z in range(mine.len_z + 1):
+            frontier_state = np.copy(state)
+            frontier_state[coordinates] = z
+            if mine.is_dangerous(frontier_state):
+                continue
+
+            unassigned_dig = (frontier_state < 0)
+            optimistic_state = np.copy(frontier_state)
+            optimistic_state[unassigned_dig] = upper_bound[unassigned_dig]
+
+            if mine.payoff(optimistic_state) > mine.payoff(best_so_far):
+                # The optimistic_state is used to determine order in the priority queue.
+                # The frontier_state is actual frontier state with unassigned values.
+                # The operations_counter is used so that if optimistic_state arrays have the same payoff,
+                # the heapq.heappush then compares a unique integer value instead.
+                priority_queue.append((next(operations_counter), optimistic_state, frontier_state))
+
+        if not priority_queue.heap:
+            return best_so_far
+
+        # pops the frontier state which has unassigned dig values.
+        state = priority_queue.pop()[2]
+    return state
 
 
 def search_bb_dig_plan(mine):
@@ -643,9 +607,9 @@ def search_bb_dig_plan(mine):
 
     '''
     
-    state = np.array(mine.initial) - 1
-    bb_auxiliary = BbAuxiliary(mine)
-    best_final_state = bb_auxiliary.bb_solution_candidates(state)
+    # state = np.array(mine.initial) - 1
+    # bb_auxiliary = BbAuxiliary(mine)
+    best_final_state = bb_search_tree(mine)
 
     best_final_state = convert_to_tuple(best_final_state)
     best_payoff = mine.payoff(best_final_state)
