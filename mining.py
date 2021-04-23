@@ -220,7 +220,7 @@ class Mine(search.Problem):
         # to represent a block before it has been mined.
         self.cumsum_mine = np.insert(cumsum, 0, 0, axis=self.underground.ndim - 1)
 
-    def surface_neighbours(self, loc):
+    def surface_neigbhours(self, loc):
         '''
         Return the list of neighbours of loc
 
@@ -299,7 +299,7 @@ class Mine(search.Problem):
             '''
             if state[coordinate] >= self.len_z:
                 return False
-            neighbours = self.surface_neighbours(coordinate)
+            neighbours = self.surface_neigbhours(coordinate)
             for neighbour in neighbours:
                 if (state[coordinate] - state[neighbour]) >= self.dig_tolerance:
                     return False
@@ -316,8 +316,7 @@ class Mine(search.Problem):
         new_state = np.array(state) # Make a copy
         new_state[action] += 1
         return convert_to_tuple(new_state)
-                
-    
+
     def console_display(self):
         '''
         Display the mine on the console
