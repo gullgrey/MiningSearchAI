@@ -245,8 +245,7 @@ class Mine(search.Problem):
                 if  (0 <= loc[0]+dx < self.len_x) and (0 <= loc[1]+dy < self.len_y):
                     L.append((loc[0]+dx, loc[1]+dy))
         return L
-     
-    
+
     def actions(self, state):
         '''
         Return a generator of valid actions in the give state 'state'
@@ -547,16 +546,18 @@ def bb_search_tree(mine):
 
     '''
     best_so_far = mine.initial
+    # The first state has every dig unassigned, represented as a -1.
     state = np.array(best_so_far) - 1
     priority_queue = search.PriorityQueue(order='max', f=lambda var: mine.payoff(var[1]))
     operations_counter = count()
 
     dimensions = mine.cumsum_mine.ndim - 1
+    # Represents the best state if there was no dig tolerance. Used as a heuristic.
     upper_bound = mine.cumsum_mine.argmax(dimensions)
 
     while np.any(state < 0):
 
-        # coordinates of the next block that has not been assigned a dig.
+        # Generates coordinates of the next dig that has not been assigned a value.
         if mine.underground.ndim == 2:
             x = np.argmax(state < 0)
             coordinates = (x,)
@@ -565,18 +566,19 @@ def bb_search_tree(mine):
             coordinates = (x, y)
 
         for z in range(mine.len_z + 1):
+            # The frontier_state is the actual frontier state with unassigned values.
             frontier_state = np.copy(state)
             frontier_state[coordinates] = z
             if mine.is_dangerous(frontier_state):
                 continue
 
             unassigned_dig = (frontier_state < 0)
+            # The optimistic_state is used to determine order in the priority queue.
+            # It consists of
             optimistic_state = np.copy(frontier_state)
             optimistic_state[unassigned_dig] = upper_bound[unassigned_dig]
 
             if mine.payoff(optimistic_state) > mine.payoff(best_so_far):
-                # The optimistic_state is used to determine order in the priority queue.
-                # The frontier_state is actual frontier state with unassigned values.
                 # The operations_counter is used so that if optimistic_state arrays have the same payoff,
                 # the heapq.heappush then compares a unique integer value instead.
                 priority_queue.append((next(operations_counter), optimistic_state, frontier_state))
@@ -605,7 +607,6 @@ def search_bb_dig_plan(mine):
     best_payoff, best_action_list, best_final_state
 
     '''
-    
     best_final_state = bb_search_tree(mine)
 
     best_final_state = convert_to_tuple(best_final_state)
