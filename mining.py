@@ -151,7 +151,8 @@ class Mine(search.Problem):
         
         Initialize the attributes
         self.underground, self.dig_tolerance, self.len_x, self.len_y, self.len_z,
-        self.cumsum_mine, and self.initial
+        self.cumsum_mine, self.initial,
+        self.two_dimensions, self.x_coordinates, and self.y_coordinates
         
         The state self.initial is a filled with zeros.
 
@@ -183,6 +184,8 @@ class Mine(search.Problem):
         self.cumsum_mine = None
         self.initial = None
 
+        # Default is True for a 2D mine.
+        self.two_dimensions = True
         self.x_coordinates = None
         self.y_coordinates = None
 
@@ -199,22 +202,23 @@ class Mine(search.Problem):
         None.
         '''
         x_index, y_index, z_index = 0, 1, -1
+        two_dimensions = 2
         self.len_x = self.underground.shape[x_index]
-        if self.underground.ndim == 2:
+        if self.underground.ndim == two_dimensions:
 
             # For a 2D mine.
             self.len_z = self.underground.shape[z_index]
-            initial_array = np.zeros(self.underground.shape[0], dtype=int)
+            initial_array = np.zeros(self.len_x, dtype=int)
 
             # The x coordinates of the mine used in the payoff function.
-            self.x_coordinates = np.arange(0, self.len_x)
+            self.x_coordinates = np.arange(self.len_x)
         else:
 
             # For a 3D mine
             self.len_y = self.underground.shape[y_index]
             self.len_z = self.underground.shape[z_index]
-            state_dimensions = (self.underground.shape[0], self.underground.shape[1])
-            initial_array = np.zeros(state_dimensions, dtype=int)
+            initial_array = np.zeros((self.len_x, self.len_y), dtype=int)
+            self.two_dimensions = False
 
             # The x and y coordinates of the mine used in the payoff function.
             self.x_coordinates, self.y_coordinates = np.indices((self.len_x, self.len_y))
@@ -226,7 +230,8 @@ class Mine(search.Problem):
         # This inserts a zero at the first column of every row of the cumulative sum,
         # to represent a block before it has been mined.
         cumsum = self.underground.cumsum(axis=self.underground.ndim - 1)
-        self.cumsum_mine = np.insert(cumsum, 0, 0, axis=self.underground.ndim - 1)
+        position, value = 0, 0
+        self.cumsum_mine = np.insert(cumsum, position, value, axis=self.underground.ndim - 1)
 
     def surface_neigbhours(self, loc):
         '''
@@ -269,7 +274,7 @@ class Mine(search.Problem):
         Parameters
         ----------
         state : 
-            represented with nested lists, tuples or a ndarray
+            represented with nested lists, tuples or a numpy array
             state of the partially dug mine
 
         Returns
@@ -290,7 +295,7 @@ class Mine(search.Problem):
             -------
             A generator of every coordinate in the given state.
             '''
-            if state.ndim == 1:
+            if self.two_dimensions:
 
                 # generates every coordinate for a 1 dimensional state
                 return ((x,) for x in range(self.len_x))
@@ -413,7 +418,7 @@ class Mine(search.Problem):
         assert state.ndim in (1, 2)
 
         # Both sum together every value in cumulative sum at the indexes of the given state.
-        if state.ndim == 1:
+        if self.two_dimensions:
 
             # 2D mine.
             return np.sum(self.cumsum_mine[self.x_coordinates, state])
@@ -451,7 +456,7 @@ class Mine(search.Problem):
         assert state.ndim in (1, 2) and direction in ('RIGHT', 'DOWN', 'DOWN-RIGHT', 'DOWN-LEFT')
         shift_down = False
 
-        # Setting up the shifting and deletion indexes and directions
+        # Setting up the rolling and deletion, indexes and axes.
         if direction == 'RIGHT':
             trim_index, trim_axis = 0, 1
             roll_direction, roll_axis = 1, 1
@@ -516,7 +521,7 @@ class Mine(search.Problem):
         # check if 1d or 2d array
         assert state.ndim in (1, 2)
 
-        if state.ndim == 1:
+        if self.two_dimensions:
 
             # Shift state across and compare values
             return self._roll_compare('DOWN', state)
@@ -609,7 +614,8 @@ class DpAuxiliary:
                 self.cached_nodes[next_state] = next_dig
 
             # compares the next dig on the frontier and updates if payoff is greater
-            if next_dig[0] > best_dig[0]:
+            payoff_position = 0
+            if next_dig[payoff_position] > best_dig[payoff_position]:
                 best_dig = next_dig
         return best_dig
 
@@ -664,7 +670,8 @@ def bb_search_tree(mine):
 
     # The first state has every dig unassigned, represented as a -1.
     state = np.array(best_so_far) - 1
-    priority_queue = search.PriorityQueue(order='max', f=lambda var: mine.payoff(var[1]))
+    optimistic_position, state_position = 1, 2
+    priority_queue = search.PriorityQueue(order='max', f=lambda var: mine.payoff(var[optimistic_position]))
     operations_counter = count()
     dimensions = mine.cumsum_mine.ndim - 1
 
@@ -672,14 +679,15 @@ def bb_search_tree(mine):
     upper_bound = mine.cumsum_mine.argmax(dimensions)
 
     # Loops while any dig in the state is unassigned.
-    while np.any(state < 0):
+    unassigned_value = -1
+    while np.any(state <= unassigned_value):
 
         # Generates coordinates of the next dig that has not been assigned a value.
-        if mine.underground.ndim == 2:
-            x = np.argmax(state < 0)
+        if mine.two_dimensions:
+            x = np.argmax(state <= unassigned_value)
             coordinates = (x,)
         else:
-            (x, y) = np.unravel_index(np.argmax(state < 0), state.shape)
+            (x, y) = np.unravel_index(np.argmax(state <= unassigned_value), state.shape)
             coordinates = (x, y)
 
         for z in range(mine.len_z + 1):
@@ -690,7 +698,7 @@ def bb_search_tree(mine):
             if mine.is_dangerous(frontier_state):
                 continue
 
-            unassigned_dig = (frontier_state < 0)
+            unassigned_dig = (frontier_state <= unassigned_value)
 
             # The optimistic_state is used to determine order in the priority queue.
             # It consists of every assigned value in the state with every unassigned value being set
@@ -709,7 +717,7 @@ def bb_search_tree(mine):
             return best_so_far
 
         # Pops the frontier state which has unassigned dig values.
-        state = priority_queue.pop()[2]
+        state = priority_queue.pop()[state_position]
     return convert_to_tuple(state)
 
 
@@ -763,16 +771,17 @@ def find_action_sequence(s0, s1):
 
     # The difference between each of the two states' digs.
     state_difference = s1 - s0
-    assert np.all(state_difference >= 0)
+    not_dug = 0
+    assert np.all(state_difference >= not_dug)
 
     action_sequence = []
 
     # Adds all coordinates > 0 to the action sequence then shifts every value down 1.
     # Repeats process until every state difference is < 1.
-    while np.any(state_difference > 0):
+    while np.any(state_difference > not_dug):
 
         # creates an array of coordinates.
-        dig_layer = np.transpose((state_difference > 0).nonzero())
+        dig_layer = np.transpose((state_difference > not_dug).nonzero())
         dig_layer = convert_to_tuple(dig_layer)
         action_sequence.extend(dig_layer)
         state_difference -= 1
