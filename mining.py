@@ -182,7 +182,6 @@ class Mine(search.Problem):
         self.cumsum_mine = None
         self.initial = None
 
-        self.dimensions = None
         self.x_coordinates = None
         self.y_coordinates = None
 
@@ -394,18 +393,36 @@ class Mine(search.Problem):
 
     def _roll_compare(self, index, axis, diagonal, state):
         '''
-        TODO add description
+        Compares a state with a copy of the state rolled in one of four directions:
+        right, down-right, down, down-left.
+        If any of the compared values exceed the dig tolerance of the mine, then return True.
+        If the state has any unassigned digs then those digs will be considered not breaking dig
+        tolerance.
+
+        Preconditions:
+            state is a 1D or 2D array
+            index is an integer in (-1,0)
+            axis is an integer in (0,1)
+
         Parameters
         ----------
-        index
-        axis
-        diagonal
-        state
+        index:
+            An integer that represents the direction of the numpy roll operation
+        axis:
+            An integer that represents the axis that the numpy roll operation will be
+            performed on.
+        diagonal:
+            A boolean that indicates whether the array is first rolled down.
+        state :
+            Represented with a numpy array,
+            state of the partially dug mine.
 
         Returns
         -------
-        TODO add returns
+        A Boolean: True if the mine breaks the dig tolerance in the rolled direction.
         '''
+        assert state.ndim in (1, 2) and index in (-1, 0) and axis in (0, 1)
+
         if (index, axis) == (0, 1):
             roll_direction, roll_axis = 1, 1
         elif (index, axis) == (0, 0):
@@ -414,7 +431,10 @@ class Mine(search.Problem):
             roll_direction, roll_axis = -1, 1
 
         if diagonal:
+            # First shifts the compared array down before shifting left or right.
             compare_state = np.roll(np.roll(state, 1, axis=0), roll_direction, axis=roll_axis)
+            # The two states are trimmed so that the edge values aren't compared to the
+            # opposite edges.
             trimmed_state = np.delete(np.delete(state, 0, 0), index, axis)
             trimmed_compare = np.delete(np.delete(compare_state, 0, 0), index, axis)
         else:
@@ -425,9 +445,9 @@ class Mine(search.Problem):
         # These lines change the elements of the compared array to be the same as
         # the elements of the original array if they equal -1.
         # -1 represents an unassigned block of a state in the BB algorithm.
-        unassigned_compare = (trimmed_compare < 0)
+        unassigned_compare = (trimmed_compare == -1)
         trimmed_compare[unassigned_compare] = trimmed_state[unassigned_compare]
-        unassigned_state = (trimmed_state < 0)
+        unassigned_state = (trimmed_state == -1)
         trimmed_state[unassigned_state] = trimmed_compare[unassigned_state]
 
         # compares values in shifted array to original state
@@ -446,12 +466,12 @@ class Mine(search.Problem):
         # convert to np.array in order to use numpy operators
         state = np.array(state)
 
-        # check whether 2d or 3d array
+        # check if 1d or 2d array
         assert state.ndim in (1, 2)
 
         if state.ndim == 1:
-            if self._roll_compare(0, 0, False, state):
-                return True
+            # Shift state across and compare values
+            return self._roll_compare(0, 0, False, state)
 
         else:
             # Shift state right and compare values
