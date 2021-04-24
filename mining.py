@@ -111,8 +111,6 @@ def convert_to_list(a):
         return [list(r) for r in a]    
 
 
-
-
 class Mine(search.Problem):
     '''
     
@@ -283,7 +281,7 @@ class Mine(search.Problem):
         def coordinates():
             '''
             Return a generator of coordinates in the state named in the outer function.
-                An coordinate is represented as a singleton (x,) in case of a 2D mine,
+            A coordinate is represented as a singleton (x,) in case of a 2D mine,
                 and a pair (x,y) in case of a 3D mine.
 
             Returns
@@ -412,11 +410,13 @@ class Mine(search.Problem):
         state = np.array(state)
         assert state.ndim in (1, 2)
 
-        # Both sum together every value in cumulative sum at the index of the given state.
+        # Both sum together every value in cumulative sum at the indexes of the given state.
         if state.ndim == 1:
+
             # 2D mine.
             return np.sum(self.cumsum_mine[self.x_coordinates, state])
         else:
+
             # 3D mine.
             return np.sum(self.cumsum_mine[self.x_coordinates, self.y_coordinates, state.flatten()])
 
@@ -504,7 +504,6 @@ class Mine(search.Problem):
 
             # Shift state across and compare values
             return self._roll_compare(0, 0, False, state)
-
         else:
 
             # Shift state right and compare values
@@ -526,15 +525,25 @@ class Mine(search.Problem):
 
 class DpAuxiliary:
     """
-    TODO add class description
+    A class to help compute the best payoff using Dynamic Programming.
+    It uses a dictionary to cache nodes of a recursive search of a mine's
+        underground, as a way of memoizing them.
     """
 
     def __init__(self, mine):
         """
-        TODO add constructor description
+        Constructor
+
+        Initializes the attributes:
+            self.mine:
+                An instance of the mine class.
+            self.cached_nodes:
+                A dictionary cache used for memoization.
+
         Parameters
         ----------
-        mine
+        mine:
+            An instance of the mine class.
 
         Returns
         -------
@@ -563,7 +572,7 @@ class DpAuxiliary:
         best_action_list:
             A list of actions represented as tuple coordinates to get from the initial
             state to the current best_final_state.
-        best_final_state
+        best_final_state:
             A numpy array representing the current state being checked.
 
         Returns
@@ -571,9 +580,10 @@ class DpAuxiliary:
         best_payoff, best_action_list, best_final_state
         """
         best_dig = (best_payoff, best_action_list, best_final_state)
-
         actions = self.mine.actions(best_final_state)
 
+        # Iterates through every state that can be dug from the current
+        # best_final_state
         for action in actions:
             next_state = self.mine.result(best_final_state, action)
 
@@ -641,15 +651,17 @@ def bb_search_tree(mine):
 
     '''
     best_so_far = mine.initial
+
     # The first state has every dig unassigned, represented as a -1.
     state = np.array(best_so_far) - 1
     priority_queue = search.PriorityQueue(order='max', f=lambda var: mine.payoff(var[1]))
     operations_counter = count()
-
     dimensions = mine.cumsum_mine.ndim - 1
+
     # Represents the best state if there was no dig tolerance. Used as a heuristic.
     upper_bound = mine.cumsum_mine.argmax(dimensions)
 
+    # Loops while any dig in the state is unassigned.
     while np.any(state < 0):
 
         # Generates coordinates of the next dig that has not been assigned a value.
@@ -661,6 +673,7 @@ def bb_search_tree(mine):
             coordinates = (x, y)
 
         for z in range(mine.len_z + 1):
+
             # The frontier_state is the actual frontier state with unassigned values.
             frontier_state = np.copy(state)
             frontier_state[coordinates] = z
@@ -668,6 +681,7 @@ def bb_search_tree(mine):
                 continue
 
             unassigned_dig = (frontier_state < 0)
+
             # The optimistic_state is used to determine order in the priority queue.
             # It consists of every assigned value in the state with every unassigned value being set
             # to its corresponding value in the upper bound.
@@ -675,10 +689,12 @@ def bb_search_tree(mine):
             optimistic_state[unassigned_dig] = upper_bound[unassigned_dig]
 
             if mine.payoff(optimistic_state) > mine.payoff(best_so_far):
+
                 # The operations_counter is used so that if optimistic_state arrays have the same payoff,
                 # the heapq.heappush then compares a unique integer value instead.
                 priority_queue.append((next(operations_counter), optimistic_state, frontier_state))
 
+        # If the frontier is empty then the best state is the initial state.
         if not priority_queue.heap:
             return best_so_far
 
@@ -740,9 +756,11 @@ def find_action_sequence(s0, s1):
     assert np.all(state_difference >= 0)
 
     action_sequence = []
+
     # Adds all coordinates > 0 to the action sequence then shifts every value down 1.
     # Repeats process until every state difference is < 1.
     while np.any(state_difference > 0):
+
         # creates an array of coordinates.
         dig_layer = np.transpose((state_difference > 0).nonzero())
         dig_layer = convert_to_tuple(dig_layer)
