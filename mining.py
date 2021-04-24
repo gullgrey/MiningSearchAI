@@ -131,6 +131,9 @@ class Mine(search.Problem):
         self.len_x, self.len_y, self.len_z : int : underground.shape
         self.cumsum_mine : float array : cumulative sums of the columns of the 
                                          mine
+        self.two_dimensions: Boolean : True if the mine is two dimensional.
+        self.x_coordinates, self.y_coordinates : numpy array : Used as the x and y
+            coordinates when indexing the cumulative sum.
     
     A state has the same dimension as the surface of the mine.
     If the mine is 2D, the state is 1D.
@@ -287,7 +290,7 @@ class Mine(search.Problem):
 
         def coordinates():
             '''
-            Return a generator of coordinates in the state named in the outer function.
+            Return a generator of tuple coordinates in the state named in the outer function.
             A coordinate is represented as a singleton (x,) in case of a 2D mine,
                 and a pair (x,y) in case of a 3D mine.
 
@@ -313,7 +316,7 @@ class Mine(search.Problem):
             Parameters
             ----------
             coordinate:
-                Surface coordinates of a cell.
+                Tuple surface coordinates of a cell.
                 A singleton (x,) in case of a 2D mine.
                 A pair (x,y) in case of a 3D mine.
 
@@ -437,7 +440,7 @@ class Mine(search.Problem):
             not breaking dig tolerance.
 
         Preconditions:
-            state is a 1D or 2D array
+            state is a 1D or 2D numpy array
             direction is a string that is any of:
                 'RIGHT', 'DOWN', 'DOWN-RIGHT', 'DOWN-LEFT'
 
@@ -558,7 +561,7 @@ class DpAuxiliary:
         Parameters
         ----------
         mine:
-            An instance of the mine class.
+            An instance of the Mine class.
 
         Returns
         -------
@@ -656,7 +659,7 @@ def bb_search_tree(mine):
     Parameters
     ----------
     mine:
-        An instance of the mine class.
+        An instance of the Mine class.
 
     Returns
     -------
