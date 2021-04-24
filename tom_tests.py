@@ -7,16 +7,21 @@ import numpy as np
 x = np.array(    [[[1, 2], [1, 2], [1, 2]],
                   [[1, 2], [1, 2], [1, 2]],
                   [[1, 2], [1, 2], [1, 2]],
-                  [[1, 2], [1, 2], [-8, 2]]])
+                  [[1, 2], [1, 2], [-9, 2]]])
+
+x2 = np.array(    [[[1, 2], [1, 2], [1, 2]],
+                   [[1, 2], [1, 2], [1, 2]],
+                   [[1, 2], [1, 2], [1, 2]],
+                   [[1, 2], [1, 2], [-9, 2]]])
 
 #2D mine
 y = np.array([[1, 2, -5, -5, -5, -5],
               [1, 2, -5, -5, -5, -5],
               [1, 2, -5, -5, -5, 100]])
 
-z = np.array([[[-2, 2], [3, -4]],
-            [[1, 2], [3, 4]],
-              [[-2, 2], [3, -4]]])
+z = np.array([[[-2, 2, 1, 2], [3, -4, 1, 2]],
+            [[1, 2, 1, 2], [3, 4, 1, 2]],
+              [[-2, 2, 1, 2], [3, -4, 1, 2]]])
 
 x_state = ((1,0,0),
            (0,2,0),
@@ -64,7 +69,7 @@ def test_dig_tol(): #Michael
 
 
 def test_actions():
-    mine = Mine(np.array(x), 2)
+    mine = Mine(np.array([[2,2],[2,2]]), 2)
     # mine.len_x = 2
     # mine.len_y = 7
     a = mine.actions(((1.0, 1.0, 1.0), (1.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)))
@@ -85,7 +90,7 @@ def test_find_action_sequence():
 
 
 def test_dp_dig_plan():
-    mine = Mine(np.array(x))
+    mine = Mine(np.array(x),2)
     result = search_dp_dig_plan(mine)
     print(result)
     print(mine)
@@ -101,7 +106,7 @@ def test_dp_dig_plan():
 #         print(bb_aux.priority_queue.pop())
 
 def test_search_bb_dig_plan():
-    mine = Mine(np.array([[[-1,0],[-1,0]],[[0,-1],[0,0]]]))
+    mine = Mine(np.array(z),2)
     print(search_bb_dig_plan(mine))
 
 if __name__ == '__main__':

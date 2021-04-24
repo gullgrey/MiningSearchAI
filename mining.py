@@ -176,6 +176,8 @@ class Mine(search.Problem):
         assert underground.ndim in (2,3)
 
         self.len_x = None
+
+        # Default is 1 for a 2D mine.
         self.len_y = 1
         self.len_z = None
 
@@ -189,7 +191,9 @@ class Mine(search.Problem):
 
     def _set_attributes(self):
         '''
-        TODO add description
+        Sets all of the class attributes in the constructor when a new mine class
+            is first initialised.
+        Based off the inputted underground and dig_tolerance.
 
         Returns
         -------
@@ -197,26 +201,31 @@ class Mine(search.Problem):
         '''
         self.len_x = self.underground.shape[0]
         if self.underground.ndim == 2:
-            self.len_z = self.underground.shape[1]
 
+            # For a 2D mine.
+            self.len_z = self.underground.shape[1]
             initial_array = np.zeros(self.underground.shape[0], dtype=int)
+
+            # The coordinates of the mine used in the payoff function.
             self.x_coordinates = np.arange(0, self.len_x)
         else:
+
+            # For a 3D mine
             self.len_y = self.underground.shape[1]
             self.len_z = self.underground.shape[2]
-
             state_dimensions = (self.underground.shape[0], self.underground.shape[1])
             initial_array = np.zeros(state_dimensions, dtype=int)
+
+            # The coordinates of the mine used in the payoff function.
             self.x_coordinates, self.y_coordinates = np.indices((self.len_x, self.len_y))
             self.x_coordinates = self.x_coordinates.flatten()
             self.y_coordinates = self.y_coordinates.flatten()
 
         self.initial = convert_to_tuple(initial_array)
 
-        cumsum = self.underground.cumsum(axis=self.underground.ndim - 1)
-
         # This inserts a zero at the first column of every row of the cumulative sum,
         # to represent a block before it has been mined.
+        cumsum = self.underground.cumsum(axis=self.underground.ndim - 1)
         self.cumsum_mine = np.insert(cumsum, 0, 0, axis=self.underground.ndim - 1)
 
     def surface_neigbhours(self, loc):
@@ -273,37 +282,52 @@ class Mine(search.Problem):
 
         def coordinates():
             '''
-            TODO description
+            Return a generator of coordinates in the state named in the outer function.
+                An coordinate is represented as a singleton (x,) in case of a 2D mine,
+                and a pair (x,y) in case of a 3D mine.
+
             Returns
             -------
-
+            A generator of every coordinate in the given state.
             '''
             if state.ndim == 1:
-                # generates every loc for a 1 dimensional state
+
+                # generates every coordinate for a 1 dimensional state
                 return ((x,) for x in range(self.len_x))
             else:
-                # generates every loc for a 2 dimensional state
+
+                # generates every coordinate for a 2 dimensional state
                 return ((x, y) for x in range(self.len_x) for y in range(self.len_y))
 
         def valid_action(coordinate):
             '''
-            TODO description
+            Determines whether the inputted coordinate would break dig tolerance compared
+                to its neighbours if a dig took place there, based off the state named
+                in the outer function.
+
             Parameters
             ----------
-            coordinate
+            coordinate:
+                Surface coordinates of a cell.
+                A singleton (x,) in case of a 2D mine.
+                A pair (x,y) in case of a 3D mine.
 
             Returns
             -------
-
+            A Boolean: False if digging at the coordinate would exceed the dig tolerance
+                compared to its neighbours.
             '''
             if state[coordinate] >= self.len_z:
                 return False
             neighbours = self.surface_neigbhours(coordinate)
+
+            # Compares each coordinate value with its neighbours.
             for neighbour in neighbours:
                 if (state[coordinate] - state[neighbour]) >= self.dig_tolerance:
                     return False
             return True
 
+        # The final generator of valid actions.
         return (coordinate for coordinate in coordinates() if valid_action(coordinate))
   
     def result(self, state, action):
@@ -386,18 +410,23 @@ class Mine(search.Problem):
         # state[loc]   where loc is a tuple
 
         state = np.array(state)
+        assert state.ndim in (1, 2)
+
+        # Both sum together every value in cumulative sum at the index of the given state.
         if state.ndim == 1:
+            # 2D mine.
             return np.sum(self.cumsum_mine[self.x_coordinates, state])
         else:
+            # 3D mine.
             return np.sum(self.cumsum_mine[self.x_coordinates, self.y_coordinates, state.flatten()])
 
     def _roll_compare(self, index, axis, diagonal, state):
         '''
         Compares a state with a copy of the state rolled in one of four directions:
-        right, down-right, down, down-left.
+            right, down-right, down, down-left.
         If any of the compared values exceed the dig tolerance of the mine, then return True.
-        If the state has any unassigned digs then those digs will be considered not breaking dig
-        tolerance.
+        If the state has any unassigned digs (represented as -1) then those digs will be considered
+            not breaking dig tolerance.
 
         Preconditions:
             state is a 1D or 2D array
@@ -414,8 +443,8 @@ class Mine(search.Problem):
         diagonal:
             A boolean that indicates whether the array is first rolled down.
         state :
-            Represented with a numpy array,
-            state of the partially dug mine.
+            Represented with a numpy array.
+            State of the partially dug mine.
 
         Returns
         -------
@@ -431,8 +460,10 @@ class Mine(search.Problem):
             roll_direction, roll_axis = -1, 1
 
         if diagonal:
+
             # First shifts the compared array down before shifting left or right.
             compare_state = np.roll(np.roll(state, 1, axis=0), roll_direction, axis=roll_axis)
+
             # The two states are trimmed so that the edge values aren't compared to the
             # opposite edges.
             trimmed_state = np.delete(np.delete(state, 0, 0), index, axis)
@@ -470,16 +501,21 @@ class Mine(search.Problem):
         assert state.ndim in (1, 2)
 
         if state.ndim == 1:
+
             # Shift state across and compare values
             return self._roll_compare(0, 0, False, state)
 
         else:
+
             # Shift state right and compare values
             if (self._roll_compare(0, 1, False, state) or
+
                     # Shift state down right and compare values
                     self._roll_compare(0, 1, True, state) or
+
                     # Shift state down and compare values
                     self._roll_compare(0, 0, False, state) or
+
                     # Shift state down left compare values
                     self._roll_compare(-1, 1, True, state)):
                 return True
@@ -499,6 +535,10 @@ class DpAuxiliary:
         Parameters
         ----------
         mine
+
+        Returns
+        -------
+        None.
         """
         self.mine = mine
 
@@ -507,16 +547,28 @@ class DpAuxiliary:
 
     def dp_recursive(self, best_payoff, best_action_list, best_final_state):
         """
-        TODO add description
+        Recursively checks every possible state within dig tolerance of the
+            underground in self.mine.
+        Each state is memoized in a dictionary "self.cashed_nodes".
+        Each new state on the frontier is first checked to see if it in the dictionary
+            and if so, that value is used rather then recursively computing its payoff
+            again.
+        Outputs the state that gives the best possible payoff, as well as the payoff itself
+            and the list of actions it took to get there.
+
         Parameters
         ----------
-        best_payoff
-        best_action_list
+        best_payoff:
+            An integer representing the payoff of the current best_final_state.
+        best_action_list:
+            A list of actions represented as tuple coordinates to get from the initial
+            state to the current best_final_state.
         best_final_state
+            A numpy array representing the current state being checked.
 
         Returns
         -------
-        TODO add returns
+        best_payoff, best_action_list, best_final_state
         """
         best_dig = (best_payoff, best_action_list, best_final_state)
 
@@ -533,7 +585,7 @@ class DpAuxiliary:
                                              best_action_list + [action],
                                              next_state)
 
-                # adds computed node to a dictionary
+                # adds computed node to a dictionary with the state as the key.
                 self.cached_nodes[next_state] = next_dig
 
             # compares the next dig on the frontier and updates if payoff is greater
@@ -548,7 +600,6 @@ def search_dp_dig_plan(mine):
     digging actions from the initial state of the mine.
     
     Return the sequence of actions, the final state and the payoff
-    
 
     Parameters
     ----------
@@ -568,14 +619,25 @@ def search_dp_dig_plan(mine):
 
 def bb_search_tree(mine):
     '''
-    TODO
+    Computes the most profitable sequence of digging actions from the initial
+        state of the mine using a Branch and Bound algorithm.
+    Starts with an unassigned state of the mine and assigns every dig one at a
+        time, adding every dig within tolerance to a priority queue.
+    It then retrieves the dig with the most promising path based off the heuristic:
+        The best state of the mine if there was no dig tolerance.
+    It then repeats this process until a fully assigned, optimal state is found.
+
     Parameters
     ----------
-    state
-    mine
+    mine:
+        An instance of the mine class.
 
     Returns
     -------
+    state :
+        Represented with nested tuples.
+        The state of the partially dug mine with the best payoff while within
+        dig tolerance.
 
     '''
     best_so_far = mine.initial
@@ -620,9 +682,9 @@ def bb_search_tree(mine):
         if not priority_queue.heap:
             return best_so_far
 
-        # pops the frontier state which has unassigned dig values.
+        # Pops the frontier state which has unassigned dig values.
         state = priority_queue.pop()[2]
-    return state
+    return convert_to_tuple(state)
 
 
 def search_bb_dig_plan(mine):
@@ -642,8 +704,6 @@ def search_bb_dig_plan(mine):
 
     '''
     best_final_state = bb_search_tree(mine)
-
-    best_final_state = convert_to_tuple(best_final_state)
     best_payoff = mine.payoff(best_final_state)
     best_action_list = find_action_sequence(mine.initial, best_final_state)
 
@@ -674,11 +734,16 @@ def find_action_sequence(s0, s1):
     s1 = np.array(s1)
 
     assert s0.ndim == s1.ndim and s0.ndim in (1, 2)
+
+    # The difference between each of the two states' digs.
     state_difference = s1 - s0
     assert np.all(state_difference >= 0)
 
     action_sequence = []
+    # Adds all coordinates > 0 to the action sequence then shifts every value down 1.
+    # Repeats process until every state difference is < 1.
     while np.any(state_difference > 0):
+        # creates an array of coordinates.
         dig_layer = np.transpose((state_difference > 0).nonzero())
         dig_layer = convert_to_tuple(dig_layer)
         action_sequence.extend(dig_layer)
