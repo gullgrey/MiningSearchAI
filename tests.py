@@ -69,7 +69,7 @@ def test_dig_tol(): #Michael
 
 
 def test_actions():
-    mine = Mine(np.array([[2,2],[2,2]]), 2)
+    mine = Mine(np.array([[2,2],[2,2]]))
     # mine.len_x = 2
     # mine.len_y = 7
     a = mine.actions(((1.0, 1.0, 1.0), (1.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)))
@@ -90,7 +90,7 @@ def test_find_action_sequence():
 
 
 def test_dp_dig_plan():
-    mine = Mine(np.array(x),2)
+    mine = Mine(np.array(x))
     result = search_dp_dig_plan(mine)
     print(result)
     print(mine)

@@ -44,6 +44,7 @@ from numbers import Number
 
 import search
 
+
 def my_team():
     '''
 
@@ -197,24 +198,25 @@ class Mine(search.Problem):
         -------
         None.
         '''
-        self.len_x = self.underground.shape[0]
+        x_index, y_index, z_index = 0, 1, -1
+        self.len_x = self.underground.shape[x_index]
         if self.underground.ndim == 2:
 
             # For a 2D mine.
-            self.len_z = self.underground.shape[1]
+            self.len_z = self.underground.shape[z_index]
             initial_array = np.zeros(self.underground.shape[0], dtype=int)
 
-            # The coordinates of the mine used in the payoff function.
+            # The x coordinates of the mine used in the payoff function.
             self.x_coordinates = np.arange(0, self.len_x)
         else:
 
             # For a 3D mine
-            self.len_y = self.underground.shape[1]
-            self.len_z = self.underground.shape[2]
+            self.len_y = self.underground.shape[y_index]
+            self.len_z = self.underground.shape[z_index]
             state_dimensions = (self.underground.shape[0], self.underground.shape[1])
             initial_array = np.zeros(state_dimensions, dtype=int)
 
-            # The coordinates of the mine used in the payoff function.
+            # The x and y coordinates of the mine used in the payoff function.
             self.x_coordinates, self.y_coordinates = np.indices((self.len_x, self.len_y))
             self.x_coordinates = self.x_coordinates.flatten()
             self.y_coordinates = self.y_coordinates.flatten()
@@ -420,28 +422,24 @@ class Mine(search.Problem):
             # 3D mine.
             return np.sum(self.cumsum_mine[self.x_coordinates, self.y_coordinates, state.flatten()])
 
-    def _roll_compare(self, index, axis, diagonal, state):
+    def _roll_compare(self, direction, state):
         '''
         Compares a state with a copy of the state rolled in one of four directions:
-            right, down-right, down, down-left.
+            RIGHT, DOWN, DOWN-RIGHT, DOWN-LEFT.
         If any of the compared values exceed the dig tolerance of the mine, then return True.
+        Testing all four directions will indicate if a mine is dangerous.
         If the state has any unassigned digs (represented as -1) then those digs will be considered
             not breaking dig tolerance.
 
         Preconditions:
             state is a 1D or 2D array
-            index is an integer in (-1,0)
-            axis is an integer in (0,1)
+            direction is a string that is any of:
+                'RIGHT', 'DOWN', 'DOWN-RIGHT', 'DOWN-LEFT'
 
         Parameters
         ----------
-        index:
-            An integer that represents the direction of the numpy roll operation
-        axis:
-            An integer that represents the axis that the numpy roll operation will be
-            performed on.
-        diagonal:
-            A boolean that indicates whether the array is first rolled down.
+        direction:
+            A string representing the direction the array is shifted before it is compared.
         state :
             Represented with a numpy array.
             State of the partially dug mine.
@@ -450,39 +448,57 @@ class Mine(search.Problem):
         -------
         A Boolean: True if the mine breaks the dig tolerance in the rolled direction.
         '''
-        assert state.ndim in (1, 2) and index in (-1, 0) and axis in (0, 1)
+        assert state.ndim in (1, 2) and direction in ('RIGHT', 'DOWN', 'DOWN-RIGHT', 'DOWN-LEFT')
+        shift_down = False
 
-        if (index, axis) == (0, 1):
+        # Setting up the shifting and deletion indexes and directions
+        if direction == 'RIGHT':
+            trim_index, trim_axis = 0, 1
             roll_direction, roll_axis = 1, 1
-        elif (index, axis) == (0, 0):
+        elif direction == 'DOWN':
+            trim_index, trim_axis = 0, 0
             roll_direction, roll_axis = 1, 0
-        else:
+        elif direction == 'DOWN-RIGHT':
+            trim_index, trim_axis = 0, 1
+            roll_direction, roll_axis = 1, 1
+            shift_down = True
+        else:  # direction == 'DOWN-LEFT'
+            trim_index, trim_axis = -1, 1
             roll_direction, roll_axis = -1, 1
+            shift_down = True
 
-        if diagonal:
+        if shift_down:
+            down_trim_index, down_trim_axis = 0, 0
+            roll_down, down_axis = 1, 0
 
             # First shifts the compared array down before shifting left or right.
-            compare_state = np.roll(np.roll(state, 1, axis=0), roll_direction, axis=roll_axis)
+            compare_state = np.roll(np.roll(state, roll_down, axis=down_axis), roll_direction, axis=roll_axis)
 
             # The two states are trimmed so that the edge values aren't compared to the
             # opposite edges.
-            trimmed_state = np.delete(np.delete(state, 0, 0), index, axis)
-            trimmed_compare = np.delete(np.delete(compare_state, 0, 0), index, axis)
+            trimmed_state = np.delete(np.delete(state, down_trim_index, down_trim_axis), trim_index, trim_axis)
+            trimmed_compare = np.delete(np.delete(compare_state, down_trim_index, down_trim_axis), trim_index, trim_axis)
         else:
+
+            # First shifts the compared array down before shifting left or right.
             compare_state = np.roll(state, roll_direction, axis=roll_axis)
-            trimmed_state = np.delete(state, index, axis)
-            trimmed_compare = np.delete(compare_state, index, axis)
+
+            # The two states are trimmed so that the edge values aren't compared to the
+            # opposite edges.
+            trimmed_state = np.delete(state, trim_index, trim_axis)
+            trimmed_compare = np.delete(compare_state, trim_index, trim_axis)
 
         # These lines change the elements of the compared array to be the same as
         # the elements of the original array if they equal -1.
         # -1 represents an unassigned block of a state in the BB algorithm.
-        unassigned_compare = (trimmed_compare == -1)
+        unassigned_dig = -1
+        unassigned_compare = (trimmed_compare == unassigned_dig)
         trimmed_compare[unassigned_compare] = trimmed_state[unassigned_compare]
-        unassigned_state = (trimmed_state == -1)
+        unassigned_state = (trimmed_state == unassigned_dig)
         trimmed_state[unassigned_state] = trimmed_compare[unassigned_state]
 
         # compares values in shifted array to original state
-        # returns true if difference is greater then the dig tolerance.
+        # returns true if any difference is greater then the dig tolerance.
         if (abs(trimmed_state - trimmed_compare) > self.dig_tolerance).any():
             return True
         return False
@@ -503,20 +519,14 @@ class Mine(search.Problem):
         if state.ndim == 1:
 
             # Shift state across and compare values
-            return self._roll_compare(0, 0, False, state)
+            return self._roll_compare('DOWN', state)
         else:
 
-            # Shift state right and compare values
-            if (self._roll_compare(0, 1, False, state) or
-
-                    # Shift state down right and compare values
-                    self._roll_compare(0, 1, True, state) or
-
-                    # Shift state down and compare values
-                    self._roll_compare(0, 0, False, state) or
-
-                    # Shift state down left compare values
-                    self._roll_compare(-1, 1, True, state)):
+            # Shift states in indicated directions and compare values
+            if (self._roll_compare('RIGHT', state) or
+                    self._roll_compare('DOWN-RIGHT', state) or
+                    self._roll_compare('DOWN', state) or
+                    self._roll_compare('DOWN-LEFT', state)):
                 return True
         return False
 
