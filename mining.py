@@ -499,10 +499,10 @@ class Mine(search.Problem):
         # These lines change the elements of the compared array to be the same as
         # the elements of the original array if they equal -1.
         # -1 represents an unassigned block of a state in the BB algorithm.
-        unassigned_dig = -1
-        unassigned_compare = (trimmed_compare == unassigned_dig)
+        unassigned_block = -1
+        unassigned_compare = (trimmed_compare == unassigned_block)
         trimmed_compare[unassigned_compare] = trimmed_state[unassigned_compare]
-        unassigned_state = (trimmed_state == unassigned_dig)
+        unassigned_state = (trimmed_state == unassigned_block)
         trimmed_state[unassigned_state] = trimmed_compare[unassigned_state]
 
         # compares values in shifted array to original state
@@ -530,7 +530,7 @@ class Mine(search.Problem):
             return self._roll_compare('DOWN', state)
         else:
 
-            # Shift states in indicated directions and compare values
+            # Shift states in indicated directions and compares values
             if (self._roll_compare('RIGHT', state) or
                     self._roll_compare('DOWN-RIGHT', state) or
                     self._roll_compare('DOWN', state) or
